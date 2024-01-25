@@ -14,10 +14,10 @@ import os
 
 def mutation_vector_base_per_patient(dimension_of_embedding_vectors, patients, hotspots, random_contigs, contig_file=False):
     if contig_file:
-      # data = pd.read_csv(contig_file, sep="\t", low_memory=False)
-       data = pd.read_csv("contig_features_reduced.tsv",sep = "\t",low_memory = False) 
+        data = pd.read_csv(contig_file, sep="\t", low_memory=False)
     else:
-       data = pd.read_csv("data/Braun_mutations_hg38_with_epitope_contigs.tsv", sep="\t", low_memory=False)
+        data = pd.read_csv("data/Braun_mutations_hg38_with_epitope_contigs.tsv", sep="\t", low_memory=False)
+        #data = pd.read_csv("data/contig_features_reduced2.tsv", sep="\t", low_memory=False)
     #random_contigs = True
     if random_contigs:
         ratio = len(data.loc[data["contig"].notna()])/len(data)*100
@@ -31,8 +31,11 @@ def mutation_vector_base_per_patient(dimension_of_embedding_vectors, patients, h
     if hotspots:
         data = data.loc[data["contig"].notna()]
 
-    out = data[["Chromosome", "Start_position", "End_position","spec_count"]].value_counts() 
-    out = out.loc[out > 2] 
+    variation_keys = ["Chromosome", "Start_position", "End_position"]
+    contig_value_to_experiment_with = "unique_peptides"
+#    contig_value_to_experiment_with = "spec_count"
+    out = data[variation_keys + [contig_value_to_experiment_with]].value_counts()
+    out = out.loc[out > 3]
     # out = out.to_dict()
     # mutations_ = out.keys()
     out = out.reset_index(name='Count')
@@ -44,11 +47,14 @@ def mutation_vector_base_per_patient(dimension_of_embedding_vectors, patients, h
 
     embedding_vectors = pd.DataFrame(embedding_vector_matrix)
 
-    mutations_with_embedding_vectors = pd.concat([out, embedding_vectors], axis=1)
-    mutations_with_embedding_vectors = mutations_with_embedding_vectors.drop('Count', axis=1)
+    mut_wh_emb_vs = pd.concat([out, embedding_vectors], axis=1)
+    mut_wh_emb_vs = mut_wh_emb_vs.drop('Count', axis=1)
 
-    augmented_data = pd.merge(data, mutations_with_embedding_vectors,
-                              on=["Chromosome", "Start_position", "End_position","spec_count"])
+    # INSERTING THE VALUE contig_value_to_experiment_with
+    mut_wh_emb_vs[embedding_vectors.columns] = np.sqrt(mut_wh_emb_vs[contig_value_to_experiment_with]) * mut_wh_emb_vs[embedding_vectors.columns]
+
+    augmented_data = pd.merge(data, mut_wh_emb_vs,
+                              on= variation_keys + [contig_value_to_experiment_with])
     # print(embedding_vectors.columns)
     augmented_data = augmented_data[["SUBJID"] + [x for x in embedding_vectors.columns]]
     augmented_data = augmented_data.groupby(["SUBJID"]).sum()
@@ -392,7 +398,7 @@ def transforming_Braun_dataset(params):
 
     if param_check(params, "with_mutations"):
         patients = new_data["SUBJID"].drop_duplicates()
-        mutations = mutation_vector_base_per_patient(2000, patients, param_check(params, "hotspots"),param_check(params, "random_contigs"), contig_file = param_check(params, "contig_file"))
+        mutations = mutation_vector_base_per_patient(4000, patients, param_check(params, "hotspots"),param_check(params, "random_contigs"), contig_file = param_check(params, "contig_file"))
         new_data = pd.merge(new_data, mutations, on=["SUBJID"], how="outer")
         # out = new_data.loc[new_data["0###"].isnull()]
     new_data = new_data.drop("SUBJID", axis=1)
