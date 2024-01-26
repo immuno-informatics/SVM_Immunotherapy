@@ -32,29 +32,35 @@ def mutation_vector_base_per_patient(dimension_of_embedding_vectors, patients, h
         data = data.loc[data["contig"].notna()]
 
     variation_keys = ["Chromosome", "Start_position", "End_position"]
-    contig_value_to_experiment_with = "unique_peptides"
+    #contig_values_to_experiment_with = ["unique_peptides","spec_count"]
+    contig_values_to_experiment_with = ["unique_peptides"]
 #    contig_value_to_experiment_with = "spec_count"
-    out = data[variation_keys + [contig_value_to_experiment_with]].value_counts()
+    out = data[variation_keys + contig_values_to_experiment_with].value_counts()
     out = out.loc[out > 3]
     # out = out.to_dict()
     # mutations_ = out.keys()
     out = out.reset_index(name='Count')
     np.random.seed(100)
-    embedding_vector_matrix = np.empty((len(out), dimension_of_embedding_vectors))
-    for i in range(len(out)):
-        embedding_vector_matrix[i] = np.random.normal(0, 1. / np.sqrt(dimension_of_embedding_vectors),
-                                                      dimension_of_embedding_vectors)
+    embedding_vector_matrices = {}
+    for contig_value_to_experiment_with in contig_values_to_experiment_with:
+        embedding_vector_matrix = np.empty((len(out), dimension_of_embedding_vectors))
+        for i in range(len(out)):
+            embedding_vector_matrix[i] = np.random.normal(0, 1. / np.sqrt(dimension_of_embedding_vectors),
+                                                          dimension_of_embedding_vectors)
 
-    embedding_vectors = pd.DataFrame(embedding_vector_matrix)
+        embedding_vectors = pd.DataFrame(embedding_vector_matrix)
+        embedding_vector_matrices[contig_value_to_experiment_with] = embedding_vectors
 
+    zero_matrix = np.zeros((len(out), dimension_of_embedding_vectors))
+    embedding_vectors = pd.DataFrame(zero_matrix)
     mut_wh_emb_vs = pd.concat([out, embedding_vectors], axis=1)
     mut_wh_emb_vs = mut_wh_emb_vs.drop('Count', axis=1)
 
     # INSERTING THE VALUE contig_value_to_experiment_with
-    mut_wh_emb_vs[embedding_vectors.columns] = np.sqrt(mut_wh_emb_vs[contig_value_to_experiment_with]) * mut_wh_emb_vs[embedding_vectors.columns]
+    for cv in contig_values_to_experiment_with:
+        mut_wh_emb_vs[embedding_vectors.columns] = mut_wh_emb_vs[embedding_vectors.columns] + np.sqrt(mut_wh_emb_vs[cv]) * embedding_vector_matrices[cv][embedding_vectors.columns]
 
-    augmented_data = pd.merge(data, mut_wh_emb_vs,
-                              on= variation_keys + [contig_value_to_experiment_with])
+    augmented_data = pd.merge(data, mut_wh_emb_vs, on = variation_keys + contig_values_to_experiment_with)
     # print(embedding_vectors.columns)
     augmented_data = augmented_data[["SUBJID"] + [x for x in embedding_vectors.columns]]
     augmented_data = augmented_data.groupby(["SUBJID"]).sum()
@@ -82,9 +88,7 @@ def mutation_vector_base_per_patient(dimension_of_embedding_vectors, patients, h
     # augmented_data.drop("index",axis=1)
 
     # Trick to avoid minmax normalization of prepare_training
-    replac = {}
-    for i in embedding_vectors.columns:
-        replac[i] = "MT_" + str(i) + "###"
+    replac = {i: "MT_" + str(i) + "###" for i in embedding_vectors.columns}
 
     augmented_data.rename(columns=replac, inplace=True)
 
