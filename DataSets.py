@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore", message=r"Passing", category=UserWarning)
 import os
 
 
-def mutation_vector_base_per_patient(dimension_of_embedding_vectors, patients, hotspots, random_contigs, contig_file=False):
+def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension_of_embedding_vectors, patients, hotspots, random_contigs, contig_file=False):
     if contig_file:
         data = pd.read_csv(contig_file, sep="\t", low_memory=False)
     else:
@@ -33,15 +33,22 @@ def mutation_vector_base_per_patient(dimension_of_embedding_vectors, patients, h
 
     variation_keys = ["Chromosome", "Start_position", "End_position"]
     #contig_values_to_experiment_with = ["unique_peptides","spec_count"]
-    contig_values_to_experiment_with = ["unique_peptides"]
-#    contig_value_to_experiment_with = "spec_count"
+    #contig_values_to_experiment_with = ["unique_peptides"]
+    #contig_values_to_experiment_with = ["spec_count"]
     out = data[variation_keys + contig_values_to_experiment_with].value_counts()
     out = out.loc[out > 3]
     # out = out.to_dict()
     # mutations_ = out.keys()
+
+    #scaler = MinMaxScaler()
+    #out[contig_values_to_experiment_with] = scaler.fit_transform(out[contig_values_to_experiment_with])
+    #print("MinMax Scaler done")
+
     out = out.reset_index(name='Count')
     np.random.seed(100)
     embedding_vector_matrices = {}
+    if len(contig_values_to_experiment_with) == 0:
+        contig_values_to_experiment_with = ["NO_VALUE"]
     for contig_value_to_experiment_with in contig_values_to_experiment_with:
         embedding_vector_matrix = np.empty((len(out), dimension_of_embedding_vectors))
         for i in range(len(out)):
@@ -56,11 +63,20 @@ def mutation_vector_base_per_patient(dimension_of_embedding_vectors, patients, h
     mut_wh_emb_vs = pd.concat([out, embedding_vectors], axis=1)
     mut_wh_emb_vs = mut_wh_emb_vs.drop('Count', axis=1)
 
-    # INSERTING THE VALUE contig_value_to_experiment_with
-    for cv in contig_values_to_experiment_with:
-        mut_wh_emb_vs[embedding_vectors.columns] = mut_wh_emb_vs[embedding_vectors.columns] + np.sqrt(mut_wh_emb_vs[cv]) * embedding_vector_matrices[cv][embedding_vectors.columns]
 
-    augmented_data = pd.merge(data, mut_wh_emb_vs, on = variation_keys + contig_values_to_experiment_with)
+    # INSERTING THE VALUE contig_value_to_experiment_with
+    if contig_values_to_experiment_with == ["NO_VALUE"]:
+        mut_wh_emb_vs[embedding_vectors.columns] = embedding_vector_matrices["NO_VALUE"][embedding_vectors.columns]
+    else:
+        #scaler = MinMaxScaler()
+        #mut_wh_emb_vs[contig_values_to_experiment_with] = scaler.fit_transform(mut_wh_emb_vs[contig_values_to_experiment_with]) + 1
+        #print("MinMax Scaler done of the HS features")
+        for cv in contig_values_to_experiment_with:
+            mut_wh_emb_vs[embedding_vectors.columns] = mut_wh_emb_vs[embedding_vectors.columns] + embedding_vector_matrices[cv][embedding_vectors.columns].multiply(np.sqrt(np.sqrt(mut_wh_emb_vs[cv])), axis=0)
+            #mut_wh_emb_vs[embedding_vectors.columns] = mut_wh_emb_vs[embedding_vectors.columns] + embedding_vector_matrices[cv][embedding_vectors.columns]
+
+#    augmented_data = pd.merge(data, mut_wh_emb_vs, on = variation_keys + contig_values_to_experiment_with)
+    augmented_data = pd.merge(data, mut_wh_emb_vs, on = variation_keys)
     # print(embedding_vectors.columns)
     augmented_data = augmented_data[["SUBJID"] + [x for x in embedding_vectors.columns]]
     augmented_data = augmented_data.groupby(["SUBJID"]).sum()
@@ -68,6 +84,7 @@ def mutation_vector_base_per_patient(dimension_of_embedding_vectors, patients, h
     norm = Normalizer()
     augmented_data[embedding_vectors.columns] = norm.fit_transform(augmented_data[embedding_vectors.columns])
 
+    #augmented_data[embedding_vectors.columns] = len(contig_values_to_experiment_with) * augmented_data[embedding_vectors.columns]
     augmented_data = pd.merge(patients, augmented_data, on=["SUBJID"])
 
     new_data = pd.merge(patients, augmented_data, on=["SUBJID"], how="outer")
@@ -402,7 +419,7 @@ def transforming_Braun_dataset(params):
 
     if param_check(params, "with_mutations"):
         patients = new_data["SUBJID"].drop_duplicates()
-        mutations = mutation_vector_base_per_patient(4000, patients, param_check(params, "hotspots"),param_check(params, "random_contigs"), contig_file = param_check(params, "contig_file"))
+        mutations = mutation_vector_base_per_patient(param_check(params, "HS_features"), 4000, patients, param_check(params, "hotspots"),param_check(params, "random_contigs"), contig_file = param_check(params, "contig_file"))
         new_data = pd.merge(new_data, mutations, on=["SUBJID"], how="outer")
         # out = new_data.loc[new_data["0###"].isnull()]
     new_data = new_data.drop("SUBJID", axis=1)
