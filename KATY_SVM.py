@@ -77,16 +77,16 @@ def draw_KM_curve_svm_experiment(additional_info={}, svm_params={}):
 
     results = km.fit(test_pfs,test_y,svm_linear_preds)
     km.plot(results) 
-    plt.savefig("comb10.pdf",dpi = 300) 
+    plt.savefig("comb_newcode_gp$1_$2.pdf",dpi = 300) 
     return None
 
 weights= {"PS":0.1,"TF":0.1,"CF":0.3,"BP":0.1,"MT":0.1,"GE":0.1}
 additional_infos = [
     {"PRIMARY_TUMOR_ONLY":False,"with_mutations":False,"hotspots":False, "weights":weights,
-     "contig_file":"data/contig_features_reduced.tsv", "recompute":False},
-    {"PRIMARY_TUMOR_ONLY":False,"with_mutations":True,"hotspots":False, "weights":weights, "contig_file":"data/contig_features_reduced.tsv"},
-    {"PRIMARY_TUMOR_ONLY":False,"with_mutations":True, "random_contigs":True , "hotspots":True, "weights":weights, "contig_file":"data/contig_features_reduced.tsv"},
-    {"PRIMARY_TUMOR_ONLY":False,"with_mutations":True, "random_contigs":False, "hotspots":True, "weights":weights, "contig_file":"data/contig_features_reduced.tsv"}
+     "contig_file":"data/scaffolds_mutation_all.tsv", "recompute":False},
+    {"PRIMARY_TUMOR_ONLY":False,"with_mutations":True,"hotspots":False, "weights":weights, "contig_file":"data/scaffolds_mutation_all.tsv"},
+    {"PRIMARY_TUMOR_ONLY":False,"with_mutations":True, "random_contigs":True , "hotspots":True, "weights":weights, "contig_file":"data/scaffolds_mutation_all.tsv"},
+    {"PRIMARY_TUMOR_ONLY":False,"with_mutations":True, "random_contigs":False, "hotspots":True, "weights":weights, "contig_file":"data/scaffolds_mutation_all.tsv"}
 
 ]
 
@@ -100,9 +100,9 @@ for additional_info in additional_infos:
 
 
 #overall_results.to_excel("./data/Bruan_MutationExperiments_3.xlsx") 
-overall_results.to_csv("./data/Bruan_MutationExperiments_comb10.tsv",sep = "\t",index = 0)
+overall_results.to_csv("./data/scaffolds_gp_$1_$2.tsv",sep = "\t",index = 0)
 overall_results
 
 draw_KM_curve_svm_experiment(svm_params={'kernel': 'poly'},
                              additional_info={"PRIMARY_TUMOR_ONLY": False, "with_mutations": True, "hotspots": True,
-                                              "weights": weights, "contig_file":"data/contig_features_reduced.tsv"})
+                                              "weights": weights, "contig_file":"data/scaffolds_mutation_all.tsv"})
