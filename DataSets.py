@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore", message=r"Passing", category=UserWarning)
 import os
 
 
-def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension_of_embedding_vectors, patients, hotspots, random_contigs, contig_file=False):
+def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension_of_embedding_vectors, patients, hotspots, random_contigs, contig_file=False,to_remove=None):
     if contig_file:
         data = pd.read_csv(contig_file, sep="\t", low_memory=False)
     else:
@@ -31,6 +31,7 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
     if hotspots:
         data = data.loc[data["contig"].notna()]
 
+    #variation_keys = ["contig"]
     variation_keys = ["Chromosome", "Start_position", "End_position"]
     #contig_values_to_experiment_with = ["unique_peptides","spec_count"]
     #contig_values_to_experiment_with = ["unique_peptides"]
@@ -45,6 +46,11 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
     #print("MinMax Scaler done")
 
     out = out.reset_index(name='Count')
+    removed = None
+    if to_remove:
+        removed = out.iloc[[to_remove]]
+        out = out.drop([to_remove])
+
     np.random.seed(100)
     embedding_vector_matrices = {}
     if len(contig_values_to_experiment_with) == 0:
@@ -68,9 +74,9 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
     if contig_values_to_experiment_with == ["NO_VALUE"]:
         mut_wh_emb_vs[embedding_vectors.columns] = embedding_vector_matrices["NO_VALUE"][embedding_vectors.columns]
     else:
-        #scaler = MinMaxScaler()
-        #mut_wh_emb_vs[contig_values_to_experiment_with] = scaler.fit_transform(mut_wh_emb_vs[contig_values_to_experiment_with]) + 1
-        #print("MinMax Scaler done of the HS features")
+        scaler = MinMaxScaler()
+        mut_wh_emb_vs[contig_values_to_experiment_with] = scaler.fit_transform(mut_wh_emb_vs[contig_values_to_experiment_with]) + 1
+        print("MinMax Scaler done of the HS features")
         for cv in contig_values_to_experiment_with:
             mut_wh_emb_vs[embedding_vectors.columns] = mut_wh_emb_vs[embedding_vectors.columns] + embedding_vector_matrices[cv][embedding_vectors.columns].multiply(np.sqrt(np.sqrt(mut_wh_emb_vs[cv])), axis=0)
             #mut_wh_emb_vs[embedding_vectors.columns] = mut_wh_emb_vs[embedding_vectors.columns] + embedding_vector_matrices[cv][embedding_vectors.columns]
@@ -84,7 +90,7 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
     norm = Normalizer()
     augmented_data[embedding_vectors.columns] = norm.fit_transform(augmented_data[embedding_vectors.columns])
 
-    #augmented_data[embedding_vectors.columns] = len(contig_values_to_experiment_with) * augmented_data[embedding_vectors.columns]
+    augmented_data[embedding_vectors.columns] = len(contig_values_to_experiment_with) * augmented_data[embedding_vectors.columns]
     augmented_data = pd.merge(patients, augmented_data, on=["SUBJID"])
 
     new_data = pd.merge(patients, augmented_data, on=["SUBJID"], how="outer")
@@ -109,7 +115,7 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
 
     augmented_data.rename(columns=replac, inplace=True)
 
-    return augmented_data
+    return augmented_data, removed
 
 bp = ["BP_chr5q23", "BP_chr16q24", "BP_chr8q24", "BP_chr13q11", "BP_chr7p21", "BP_chr10q23",
       "BP_chr13q13", "BP_chr10q21", "BP_chr1p13", "BP_chrxp21", "BP_chr4q12", "BP_chr6q13", "BP_chr2p22",
@@ -221,7 +227,7 @@ def reading_katy_data(params):
 
     if with_mutations:
         patients = new_data["SUBJID"].drop_duplicates()
-        mutations = mutation_vector_base_per_patient(400, patients, hotspots)
+        mutations, removed = mutation_vector_base_per_patient(400, patients, hotspots)
 
         new_data = pd.merge(new_data, mutations, on=["SUBJID"], how="outer")
         # out = new_data.loc[new_data["0###"].isnull()]
@@ -241,7 +247,7 @@ def reading_katy_data(params):
         new_data = pd.merge(new_data, bio_path_data, on=["SUBJID"], how="outer")
 
     new_data = new_data.drop("SUBJID", axis=1)
-    return new_data
+    return new_data, removed
 
 
 def reducing_training_and_testing(new_data_train, new_data_test, kind, dim, train_on_all=False):
@@ -419,7 +425,7 @@ def transforming_Braun_dataset(params):
 
     if param_check(params, "with_mutations"):
         patients = new_data["SUBJID"].drop_duplicates()
-        mutations = mutation_vector_base_per_patient(param_check(params, "HS_features"), 4000, patients, param_check(params, "hotspots"),param_check(params, "random_contigs"), contig_file = param_check(params, "contig_file"))
+        mutations, removed = mutation_vector_base_per_patient(param_check(params, "HS_features"), 4000, patients, param_check(params, "hotspots"),param_check(params, "random_contigs"), contig_file = param_check(params, "contig_file"),to_remove = param_check(params, "exclude_mutation") )
         new_data = pd.merge(new_data, mutations, on=["SUBJID"], how="outer")
         # out = new_data.loc[new_data["0###"].isnull()]
     new_data = new_data.drop("SUBJID", axis=1)
@@ -551,4 +557,4 @@ def transforming_Braun_dataset(params):
     #data_for_revert_experiment.to_csv('data/Braun_2020_ALL_UNIQUE_revert.csv', index="False")
 
 
-    return new_data_train, train_classification_labels, new_data_test, test_classification_labels, test_pfs
+    return new_data_train, train_classification_labels, new_data_test, test_classification_labels, test_pfs, removed
