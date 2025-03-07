@@ -144,16 +144,16 @@ overall_results
 
 
 # Intersting Mutation
-#for chr_to_remove in range(1,170):
-#    print("excluding mutation: " + str(chr_to_remove))
-#    additional_info["exclude_mutation"] = chr_to_remove
-#    results_frame = svm_experiment(additional_info)
-#    overall_results_frames = [overall_results,results_frame]
-#    overall_results = pd.concat(overall_results_frames)
+for chr_to_remove in range(1,170):
+    print("excluding mutation: " + str(chr_to_remove))
+    additional_info["exclude_mutation"] = chr_to_remove
+    results_frame = svm_experiment(additional_info)
+    overall_results_frames = [overall_results,results_frame]
+    overall_results = pd.concat(overall_results_frames)
 
 
-#overall_results.to_excel("./data/Bruan_MutationExperiments_3_1.xlsx")
-#overall_results
+overall_results.to_excel("./data/Bruan_MutationExperiments_3_1.xlsx")
+
 
 #def plot_feature_aroc_curves(results_df):
 #    """
