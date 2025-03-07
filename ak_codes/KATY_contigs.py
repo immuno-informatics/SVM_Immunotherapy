@@ -127,15 +127,6 @@ for additional_info in additional_infos:
 
 
 overall_results.to_csv("./data/Bruan_MutationExperiments_3n.tsv",sep = "\t",index = 0)
-overall_results
-
-
-
-#weights= {"PS":0.1,"TF":0.1,"CF":0.3,"BP":0.1,"MT":0.1,"GE":0.1}
-#additional_info = {"PRIMARY_TUMOR_ONLY":False,"with_mutations":True, "random_contigs":False, "hotspots":True, "weights":weights, "contig_file":"data/contig_features_reduced2.tsv","HS_features":[]}
-
-
-
 
 #overall_results = pd.DataFrame()
 #results_frame = svm_experiment(additional_info=additional_info)
