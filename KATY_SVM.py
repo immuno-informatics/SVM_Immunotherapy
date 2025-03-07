@@ -117,105 +117,62 @@ def contig_delta(braun_file,cont_file,cont2_file,output_file):
     
     return braun_sub_sorted
 
-def annotate_bars(ax, data, ratio_column, hue_column='Is_in_tq'):
-    # Get unique hue values
-    hue_values = data[hue_column].unique()
-    n_hues = len(hue_values)
+color_palette = sns.color_palette(['orange', 'blue'])
+
+#Revised multiple barplot code
+
+def annotate_bars(ax, data, y_column):
+    for p in ax.patches:
+        height = p.get_height()
+        if height > 0:
+            ax.annotate(f'{height:.2f}', 
+                        (p.get_x() + p.get_width() / 2., height),
+                        ha='center', va='bottom', fontsize=9, color='black', xytext=(0, 4),
+                        textcoords='offset points')
+
+    for i, row in data.iterrows():
+        gene_name = row.get('gene_name', '')
+        if gene_name:
+            p = [p for p in ax.patches if p.get_x() == i]
+            if p:
+                p = p[0]
+                ax.annotate(gene_name, 
+                            (p.get_x() + p.get_width() / 2., p.get_height() / 2.),
+                            ha='center', fontsize=10, rotation=45, color='white', 
+                            bbox=dict(facecolor='black', alpha=0.6, edgecolor='none'))
+
+fig, axes = plt.subplots(5, 1, figsize=(14, 22), sharex=True)
+sns.set_style("white")  # Removes grid but keeps whitespace
+bar_width = 0.5  # Adjust bar width to reduce whitespace
+
+plot_params = [
+    ('del_perf', 'Performance delta', 'Performance delta'),
+    ('popcov_but_sqrt', 'Promiscuity scores', 'Promiscuity'),
+    ('Count', 'Number of patients', 'Number of patients'),
+    ('unique_peptides', 'Number of unique peptides', 'Unique peptides'),
+    ('n_unique_HLA', 'Number of unique HLA alleles', 'Unique HLA alleles')
+]
+
+for ax, (y_col, title, ylabel) in zip(axes, plot_params):
+    sns.barplot(x='contig', y=y_col, data=braun_sub_sorted, hue='new_tq',
+                palette=color_palette, ax=ax, dodge=False, width=bar_width)
+    ax.set_title(title, fontsize=14)
+    ax.set_ylabel(ylabel, fontsize=12)
+    ax.tick_params(axis='x', rotation=90, labelsize=10)
+    ax.tick_params(axis='y', labelsize=12)
+    ax.legend(title='new_tq', frameon=False, fontsize=10)
     
-    # Extract the x-tick labels as strings
-    x_tick_labels = [tick.get_text() for tick in ax.get_xticklabels()]
-    
-    # Filter valid labels that exist in the data
-    valid_labels = [label for label in x_tick_labels if label in data['contig'].values]
-    
-    if not valid_labels:
-        print("Warning: No matching labels found in data. Skipping annotation.")
-        return
-        
-    # Sort data by the order of the contigs in the plot
-    sorted_data = data.set_index('contig').loc[valid_labels].reset_index()
-    
-    if sorted_data.empty:
-        print("Warning: sorted_data is empty. Skipping annotation.")
-        return
-        
-    # Now handle each hue category separately
-    for idx, contig in enumerate(sorted_data['contig'].unique()):
-        for hue_idx, hue_val in enumerate(hue_values):
-            mask = (sorted_data['contig'] == contig) & (sorted_data[hue_column] == hue_val)
-            if not mask.any():
-                continue
-                
-            current_data = sorted_data[mask].iloc[0]
-            patch_idx = idx * n_hues + hue_idx
-            if patch_idx >= len(ax.patches):
-                continue
-                
-            p = ax.patches[patch_idx]
-            
-            # Annotate gene name in the middle of the bar
-            gene_name = current_data['gene_name']
-            ax.annotate(gene_name, 
-                       (p.get_x() + p.get_width() / 2, p.get_height() / 2),
-                       textcoords="offset points", 
-                       xytext=(0, 0), 
-                       ha='center', 
-                       fontsize=12, 
-                       color="white")
-            
-            # Annotate ratio above the bar
-            count_value = current_data[ratio_column]
-            ratio = count_value / 2323
-            ax.annotate(f'{ratio:.2f}', 
-                       (p.get_x() + p.get_width() / 2, p.get_height()),
-                       textcoords="offset points", 
-                       xytext=(0, 10), 
-                       ha='center', 
-                       fontsize=18, 
-                       color="black")
+    # Remove grid lines
+    ax.grid(False)
 
-# Create figure and axes
-fig, axes = plt.subplots(3, 1, figsize=(15, 20))
+    annotate_bars(ax, braun_sub_sorted, y_col)
 
-# Plot 1: 'contig' vs 'del_perf'
-sns.barplot(x='contig', y='del_perf', data=braun_sub_sorted, 
-            hue='Is_in_tq', dodge=True, palette=color_palette, ax=axes[0])
-axes[0].set_title('The 10 most important contigs ranked by decreasing order of performance delta')
-axes[0].set_xlabel('Contig ID', fontsize=16)
-axes[0].set_ylabel('Performance delta', fontsize=16)
-axes[0].tick_params(axis='x', rotation=90, labelsize=16)
-axes[0].tick_params(axis='y', labelsize=16)
-axes[0].legend(frameon=False)
-annotate_bars(axes[0], braun_sub_sorted, 'Count')
-
-# Plot 2: 'contig' vs 'popcov_but_sqrt'
-sns.barplot(x='contig', y='popcov_but_sqrt', data=braun_sub_sorted, 
-            hue='Is_in_tq', dodge=True, palette=color_palette, ax=axes[1])
-axes[1].set_title('Promiscuity scores')
-axes[1].set_xlabel('Contig ID', fontsize=16)
-axes[1].set_ylabel('Promiscuity', fontsize=16)
-axes[1].tick_params(axis='x', rotation=90, labelsize=16)
-axes[1].tick_params(axis='y', labelsize=16)
-axes[1].legend(frameon=False)
-annotate_bars(axes[1], braun_sub_sorted, 'Count')
-
-# Plot 3: 'contig' vs 'Count'
-sns.barplot(x='contig', y='Count', data=braun_sub_sorted, 
-            hue='Is_in_tq', dodge=True, palette=color_palette, ax=axes[2])
-axes[2].set_title('Number of patients')
-axes[2].set_xlabel('Contig ID', fontsize=16)
-axes[2].set_ylabel('Number of patients', fontsize=16)
-axes[2].tick_params(axis='x', rotation=90, labelsize=16)
-axes[2].tick_params(axis='y', labelsize=16)
-axes[2].legend(frameon=False)
-annotate_bars(axes[2], braun_sub_sorted, 'Count')
-
-sns.despine()
+axes[-1].set_xlabel('Contig ID', fontsize=12)
 plt.tight_layout()
-
-# Save and show the plot
-plt.savefig("performance_delta_contigs.pdf")
+sns.despine()
+plt.savefig("performance_delta_contigs_final.pdf")
 plt.show()
+
         
 
 weights= {"PS":0.1,"TF":0.1,"CF":0.3,"BP":0.1,"MT":0.1,"GE":0.1}
