@@ -95,9 +95,12 @@ def draw_KM_curve_svm_experiment(file_name,additional_info={}, svm_params={}):
     return None
 
 
-
-
+#Run in two modes: with and without Christophes' data
+#Each run produces different results: logrank p-value is significant with Christophe's data at scaffold level only but not at
+#other levels.
+#With Christophe's data
 #weights= {"PS":0.1,"TF":0.1,"CF":0.4,"BP":0.4,"MT":0.6,"GE":0.0} 
+#Without Christophe's data
 weights= {"PS":0.1,"TF":0.1,"CF":0.4,"BP":0.0,"MT":0.6,"GE":0.0}
 additional_infos = [
 #    {"PRIMARY_TUMOR_ONLY":False,"with_mutations":False,"hotspots":False, "weights":weights,
