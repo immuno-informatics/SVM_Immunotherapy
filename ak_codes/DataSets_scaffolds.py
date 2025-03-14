@@ -70,16 +70,15 @@ def mutation_vector_base_per_patient(scaffold_values_to_experiment_with, dimensi
     if scaffold_values_to_experiment_with == ["NO_VALUE"]:
         mut_wh_emb_vs[embedding_vectors.columns] = embedding_vector_matrices["NO_VALUE"][embedding_vectors.columns]
     else:
-        #scaler = MinMaxScaler()
-        #mut_wh_emb_vs[scaffold_values_to_experiment_with] = scaler.fit_transform(mut_wh_emb_vs[scaffold_values_to_experiment_with]) + 1
-        #print("MinMax Scaler done of the HS features")
+        scaler = MinMaxScaler()
+        mut_wh_emb_vs[scaffold_values_to_experiment_with] = scaler.fit_transform(mut_wh_emb_vs[scaffold_values_to_experiment_with]) + 1
+        print("MinMax Scaler done of the HS features")
         for cv in scaffold_values_to_experiment_with:
             mut_wh_emb_vs[embedding_vectors.columns] = mut_wh_emb_vs[embedding_vectors.columns] + embedding_vector_matrices[cv][embedding_vectors.columns].multiply(np.sqrt(np.sqrt(mut_wh_emb_vs[cv])), axis=0)
             #mut_wh_emb_vs[embedding_vectors.columns] = mut_wh_emb_vs[embedding_vectors.columns] + embedding_vector_matrices[cv][embedding_vectors.columns]
 
 #    augmented_data = pd.merge(data, mut_wh_emb_vs, on = variation_keys + scaffold_values_to_experiment_with)
     augmented_data = pd.merge(data, mut_wh_emb_vs, on = variation_keys)
-    # print(embedding_vectors.columns)
     augmented_data = augmented_data[["SUBJID"] + [x for x in embedding_vectors.columns]]
     augmented_data = augmented_data.groupby(["SUBJID"]).sum()
 
