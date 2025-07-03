@@ -1,0 +1,48 @@
+"""."""
+
+configurations = [
+    {
+        "PRIMARY_TUMOR_ONLY": False,
+        "with_mutations": True,
+        "random_contigs": False,
+        "hotspots": True,
+        "weights": {"PS": 1.0, "TF": 1.0, "CF": 1.0, "BP": 1.0, "MT": 1.0, "GE": 1.0},
+        "contig_file": "../data/braun_mutations_alternative_scoring_narrow_broad.tsv",
+        "HS_features": ["Unique_peptides_narrow", "Promiscuity_narrow"],
+        "plot_label": "Peptide level",
+        "mut_vec_len": 149,
+    },
+    {
+        "PRIMARY_TUMOR_ONLY": False,
+        "with_mutations": True,
+        "random_contigs": False,
+        "hotspots": True,
+        "weights": {"PS": 1.0, "TF": 1.0, "CF": 1.0, "BP": 1.0, "MT": 1.0, "GE": 1.0},
+        "contig_file": "../data/Michal_combined_set_14_02_2025.tsv",
+        "HS_features": ["unique_peptides", "popcov_but_sqrt"],
+        "plot_label": "Contig level",
+        "mut_vec_len": 327,
+    },
+    {
+        "PRIMARY_TUMOR_ONLY": False,
+        "with_mutations": True,
+        "random_contigs": False,
+        "hotspots": False,
+        "weights": {"PS": 1.0, "TF": 1.0, "CF": 1.0, "BP": 1.0, "MT": 1.0, "GE": 1.0},
+        "contig_file": "../data/Braun_hg38_epscaff10_w_score_2025.tsv",
+        "HS_features": ["popcov_but_sqrt", "unique_peptides"],
+        "plot_label": "Scaffold level",
+        "mut_vec_len": 77,
+    },
+    {
+        "PRIMARY_TUMOR_ONLY": False,
+        "with_mutations": True,
+        "random_contigs": False,
+        "hotspots": False,
+        "weights": {"PS": 1.0, "TF": 1.0, "CF": 1.0, "BP": 1.0, "MT": 1.0, "GE": 1.0},
+        "contig_file": "../data/braun_mutations_alternative_scoring_narrow_broad.tsv",
+        "HS_features": [],
+        "plot_label": "Baseline",
+        "mut_vec_len": 21,
+    },
+]
