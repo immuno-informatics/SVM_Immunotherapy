@@ -24,8 +24,7 @@ np.random.seed(1024)
 
 # Config
 
-mutations_vector_len_range = np.linspace(1001, 2000, num=1000, dtype=int)
-# mutations_vector_len_range = range(1, 1000 + 1, 1)
+mutations_vector_len_range = np.linspace(2001, 4000, num=2000, dtype=int)
 
 clf_kwargs = {"kernel": "rbf"}
 
