@@ -24,7 +24,7 @@ np.random.seed(1024)
 
 # mutations_vector_len_range = np.linspace(1, 1000, num=1000, dtype=int)
 # mutations_vector_len_range = [149, 327, 77, 21]
-mutations_vector_len_range = np.linspace(1001, 2000, num=1000, dtype=int)
+mutations_vector_len_range = np.linspace(2001, 3000, num=1000, dtype=int)
 
 gs_n_jobs = 60
 
