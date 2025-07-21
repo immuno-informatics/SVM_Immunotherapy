@@ -299,9 +299,9 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000):
             new_data_test[CF_columns] = weights["CF"]*scaler.transform(new_data_test[CF_columns])
 
     # COLUMNS FILTERING
-    ok_columns = ["CF_Sex", "CF_Age", "MT_"]
-    new_data_train = new_data_train[[c for c in new_data_train.columns if c.startswith(tuple(ok_columns))]]
-    new_data_test = new_data_test[[c for c in new_data_test.columns if c.startswith(tuple(ok_columns))]]
+    # ok_columns = ["CF_Sex", "CF_Age", "MT_"]
+    # new_data_train = new_data_train[[c for c in new_data_train.columns if c.startswith(tuple(ok_columns))]]
+    # new_data_test = new_data_test[[c for c in new_data_test.columns if c.startswith(tuple(ok_columns))]]
     # COLUMNS FILTERING
 
     norm = Normalizer()

@@ -12,8 +12,13 @@ from sklearnex import patch_sklearn
 patch_sklearn()
 
 from sklearn import svm  # noqa: E402
-from sklearn.metrics import (accuracy_score, f1_score, precision_score,  # noqa: E402
-                             recall_score, roc_auc_score)
+from sklearn.metrics import accuracy_score  # noqa: E402
+from sklearn.metrics import f1_score  # noqa: E402
+# from sklearn.metrics import fbeta_score  # noqa: E402
+# from sklearn.metrics import make_scorer  # noqa: E402
+# from sklearn.metrics import matthews_corrcoef  # noqa: E402
+from sklearn.metrics import (precision_score, recall_score,  # noqa: E402
+                             roc_auc_score)
 from sklearn.model_selection import GridSearchCV, PredefinedSplit  # noqa: E402
 from tqdm import tqdm  # noqa: E402
 
@@ -22,31 +27,36 @@ np.random.seed(1024)
 
 # Config
 
-# mutations_vector_len_range = np.linspace(1, 1000, num=1000, dtype=int)
-# mutations_vector_len_range = [149, 327, 77, 21]
-mutations_vector_len_range = np.linspace(2001, 3000, num=1000, dtype=int)
+mutations_vector_len_range = np.linspace(1, 4000, num=4000, dtype=int)
+# mutations_vector_len_range = [887, 243, 375, 881]
+# mutations_vector_len_range = np.linspace(3001, 4000, num=1000, dtype=int)
 
-gs_n_jobs = 60
+gs_n_jobs = 50
+
+p_list_c = [0.01, 0.1, 1, 5, 10, 50, 100]
+p_list_gamma = ["auto", 0.1, 0.01, 0.001, 0.0001]
+p_list_coef0 = [0, 1, 2, 3, 4, 5]
+p_list_degree = [2, 3, 4, 5]
 
 gs_param_grid = [
-    {"C": [1, 5, 10, 50, 100, 1000], "kernel": ["linear"]},
+    {"C": p_list_c, "kernel": ["linear"]},
     {
-        "C": [1, 5, 10, 50, 100, 1000],
-        "gamma": ["scale", "auto", 0.1, 0.01, 0.001, 0.0001],
+        "C": p_list_c,
+        "gamma": p_list_gamma,
         "kernel": ["rbf"],
     },
     {
-        "C": [1, 5, 10, 50, 100, 1000],
-        "gamma": ["scale", "auto", 0.1, 0.01, 0.001, 0.0001],
+        "C": p_list_c,
+        "gamma": p_list_gamma,
         "kernel": ["poly"],
-        "degree": [2, 3, 4, 5],
-        "coef0": [0, 1, 2, 3, 4, 5],
+        "degree": p_list_degree,
+        "coef0": p_list_coef0,
     },
     {
-        "C": [1, 5, 10, 50, 100, 1000],
-        "gamma": ["scale", "auto", 0.1, 0.01, 0.001, 0.0001],
+        "C": p_list_c,
+        "gamma": p_list_gamma,
         "kernel": ["sigmoid"],
-        "coef0": [0, 1, 2, 3, 4, 5],
+        "coef0": p_list_coef0,
     },
 ]
 
@@ -59,8 +69,7 @@ def average_scorer(estimator, X, y):
     y_pred = estimator.predict(X)
     y_proba = estimator.predict_proba(X)
     probSV = [i[1] for i in y_proba]
-    new_pd = pd.DataFrame(probSV)
-    probs = new_pd.values.flatten()
+    probs = pd.DataFrame(probSV).values.flatten()
 
     prec = precision_score(y, y_pred)
     rec = recall_score(y, y_pred)
@@ -90,15 +99,18 @@ def grid_searching(train_data, train_y, test_data, test_y):
         scoring={
             "mean": average_scorer,
             "accuracy": "accuracy",
-            "f1": "f1",
+            "f1": "f1",  # ok
             "precision": "precision",
             "recall": "recall",
             "roc_auc": "roc_auc",
+            "balanced_accuracy": "balanced_accuracy",  # ok
+            # "fbeta": make_scorer(fbeta_score, beta=1),  # ok
+            # "average_precision": "average_precision",  # nope
+            # "matthews_corrcoef": make_scorer(matthews_corrcoef),  # ok
         },
-        refit="mean",
+        refit="balanced_accuracy",
         cv=ps,
         n_jobs=gs_n_jobs,
-        verbose=0,
     ).fit(X_full, y_full)
 
     return search
@@ -111,6 +123,7 @@ best_scores = {}
 
 for config in tqdm(cfg.configurations):
     model_label = config[label_key]
+
     best_score[model_label] = 0
     best_vec_len[model_label] = None
     best_params[model_label] = None
@@ -142,6 +155,18 @@ for config in tqdm(cfg.configurations):
             best_scores[model_label] += f"    Recall: {rec:.3f}\n"
             best_scores[model_label] += f"    F1 Score: {f1:.3f}\n"
             best_scores[model_label] += f"    ROC AUC: {rauc:.3f}"
+            #
+            # ba = search.cv_results_["mean_test_balanced_accuracy"][b_index]
+            # best_scores[model_label] += f"\n    balanced_accuracy: {ba:.3f}\n"
+            # fb = search.cv_results_["mean_test_fbeta"][b_index]
+            # best_scores[model_label] += f"    fbeta: {fb:.3f}\n"
+            # ap = search.cv_results_["mean_test_average_precision"][b_index]
+            # best_scores[model_label] += f"    average_precision: {ap:.3f}\n"
+            # mc = search.cv_results_["mean_test_matthews_corrcoef"][b_index]
+            # best_scores[model_label] += f"    matthews_corrcoef: {mc:.3f}"
+            #
+            m = search.cv_results_["mean_test_mean"][b_index]
+            best_scores[model_label] += f"\n      _MEAN_: {m:.3f}"
 
 for k in best_score.keys():
     print(
