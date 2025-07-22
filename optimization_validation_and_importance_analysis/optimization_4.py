@@ -37,9 +37,9 @@ np.random.seed(1024)
 
 # Config
 
-opt_n_trials = 5000
+opt_n_trials = 10_000
 opt_n_jobs = 1  # Results are unreproducible if > 1
-opt_max_stagnation_trials = 500
+opt_max_stagnation_trials = 1_000
 
 cv_n_jobs = 1
 cv_scoring = "balanced_accuracy"
@@ -80,22 +80,22 @@ def objective(trial, config):
     # SVM parameters to optimize
     optional_clf_params = {}
     kernel = trial.suggest_categorical("kernel", ["linear", "rbf", "poly", "sigmoid"])
-    c = trial.suggest_float("C", 1e-3, 1e3, step=1e-3)
+    c = trial.suggest_float("C", 0.001, 1_000.0, log=True)
     if kernel == "rbf" or kernel == "poly" or kernel == "sigmoid":
         optional_clf_params["gamma"] = trial.suggest_float(
-            "gamma", 1e-4, 1.0, step=1e-4
+            "gamma", 0.0001, 10.0, log=True
         )
         if kernel == "poly" or kernel == "sigmoid":
             optional_clf_params["coef0"] = trial.suggest_float(
-                "coef0", 1e-2, 1e2, step=1e-2
+                "coef0", -1, 10.0, step=0.01
             )
             if kernel == "poly":
-                optional_clf_params["degree"] = trial.suggest_int("degree", 1, 10)
+                optional_clf_params["degree"] = trial.suggest_int("degree", 2, 10)
 
     clf = svm.SVC(kernel=kernel, C=c, **svc_core_args, **optional_clf_params)
 
     # Mutation vector length optimization
-    v_len = trial.suggest_int(v_len_name, 1, 4000)
+    v_len = trial.suggest_int(v_len_name, 1, 4_000)
 
     # Weights of input parameter groups optimization
     weights = {wg: trial.suggest_float(wg, 0.0, 1.0, step=0.1) for wg in weights_groups}
@@ -122,7 +122,7 @@ def objective(trial, config):
 
 
 if __name__ == "__main__":
-    for config in tqdm(cfg.configurations[:1], desc="Models"):
+    for config in tqdm(cfg.configurations, desc="Models"):
         model_label = config[label_key]
 
         sampler = TPESampler(seed=yeloh_seed)
