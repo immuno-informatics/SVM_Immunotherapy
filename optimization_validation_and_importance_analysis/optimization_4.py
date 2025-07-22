@@ -111,8 +111,8 @@ def objective(trial, config):
     y_full = np.concatenate((train_y, test_y))
     train_indices = [-1] * len(train_data)
     validation_indices = [0] * len(test_data)
-    test_fold = np.array(train_indices + validation_indices)
-    ps = PredefinedSplit(test_fold)
+    split = np.array(train_indices + validation_indices)
+    ps = PredefinedSplit(split)
 
     scores = cross_val_score(
         clf, X_full, y_full, n_jobs=cv_n_jobs, cv=ps, scoring=cv_scoring
