@@ -13,11 +13,10 @@ from sklearnex import patch_sklearn
 patch_sklearn()
 
 import optuna  # noqa: E402
-# from optuna.distributions import CategoricalDistribution  # noqa: E402
-# from optuna.distributions import FloatDistribution  # noqa: E402
-# from optuna.distributions import IntDistribution  # noqa: E402
-# from optuna.integration import OptunaSearchCV  # noqa: E402
 from optuna.samplers import TPESampler  # noqa: E402
+from optuna.terminator import BestValueStagnationEvaluator  # noqa: E402
+from optuna.terminator import StaticErrorEvaluator  # noqa: E402
+from optuna.terminator import Terminator  # noqa: E402
 from optuna.terminator.callback import TerminatorCallback  # noqa: E402
 from sklearn import svm  # noqa: E402
 from sklearn.metrics import accuracy_score  # noqa: E402
@@ -38,12 +37,12 @@ np.random.seed(1024)
 
 # Config
 
-opt_n_trials = 500
+opt_n_trials = 5000
 opt_n_jobs = 1  # Results are unreproducible if > 1
+opt_max_stagnation_trials = 500
 
 cv_n_jobs = 1
 cv_scoring = "balanced_accuracy"
-# cv_scoring = "recall"
 
 svc_core_args = {"probability": True, "random_state": yeloh_seed}
 
@@ -83,14 +82,15 @@ def objective(trial, config):
     kernel = trial.suggest_categorical("kernel", ["linear", "rbf", "poly", "sigmoid"])
     c = trial.suggest_float("C", 1e-3, 1e3, step=1e-3)
     if kernel == "rbf" or kernel == "poly" or kernel == "sigmoid":
-        gamma = trial.suggest_float("gamma", 1e-4, 1.0, step=1e-4)
-        optional_clf_params["gamma"] = gamma
+        optional_clf_params["gamma"] = trial.suggest_float(
+            "gamma", 1e-4, 1.0, step=1e-4
+        )
         if kernel == "poly" or kernel == "sigmoid":
-            coef0 = trial.suggest_float("coef0", 1e-2, 1e2, step=1e-2)
-            optional_clf_params["coef0"] = coef0
+            optional_clf_params["coef0"] = trial.suggest_float(
+                "coef0", 1e-2, 1e2, step=1e-2
+            )
             if kernel == "poly":
-                degree = trial.suggest_int("degree", 1, 10)
-                optional_clf_params["degree"] = degree
+                optional_clf_params["degree"] = trial.suggest_int("degree", 1, 10)
 
     clf = svm.SVC(kernel=kernel, C=c, **svc_core_args, **optional_clf_params)
 
@@ -114,11 +114,11 @@ def objective(trial, config):
     test_fold = np.array(train_indices + validation_indices)
     ps = PredefinedSplit(test_fold)
 
-    score = cross_val_score(
+    scores = cross_val_score(
         clf, X_full, y_full, n_jobs=cv_n_jobs, cv=ps, scoring=cv_scoring
     )
 
-    return score.mean()
+    return scores.mean()
 
 
 if __name__ == "__main__":
@@ -126,7 +126,16 @@ if __name__ == "__main__":
         model_label = config[label_key]
 
         sampler = TPESampler(seed=yeloh_seed)
-        terminator = TerminatorCallback()
+        improvement_evaluator = BestValueStagnationEvaluator(
+            max_stagnation_trials=opt_max_stagnation_trials
+        )
+        error_evaluator = StaticErrorEvaluator(0)
+        terminator = TerminatorCallback(
+            Terminator(
+                improvement_evaluator=improvement_evaluator,
+                error_evaluator=error_evaluator,
+            )
+        )
 
         study = optuna.create_study(
             study_name=f"{model_label}", direction="maximize", sampler=sampler
@@ -137,7 +146,7 @@ if __name__ == "__main__":
             n_jobs=opt_n_jobs,
             gc_after_trial=True,
             show_progress_bar=True,
-            callbacks=[TerminatorCallback()],
+            callbacks=[terminator],
         )
 
         # Print the best model parameters and results
@@ -163,13 +172,11 @@ if __name__ == "__main__":
         mean_s = (prec + rec + f1 + acc + rauc) / 5
 
         print(
-            f"{model_label}:\n"
+            f"\n{model_label}:\n"
             f"  Best score: {best_score:.3f}\n"
             f"  Best vector length: {best_v_len}\n"
             f"  Best SVM parameters: {best_svm_params}\n"
-            f"  Best weights: {best_weights}"
-        )
-        print(
+            f"  Best weights: {best_weights}\n"
             f"    Accuracy: {acc:.3f}\n"
             f"    Precision: {prec:.3f}\n"
             f"    Recall: {rec:.3f}\n"
