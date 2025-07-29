@@ -63,7 +63,7 @@ svc_core_args = {"probability": True, "random_state": yeloh_seed}
 label_key = "plot_label"
 weights_key = "weights"
 hotspots_key = "hotspots"
-weights_to_opti = frozenset({"PS", "TF", "CF", "BP", "MT", "GE", "Arm"})
+weights_to_opti = frozenset({"CF", "MT"})
 
 v_len_name = "v_len"
 
@@ -100,7 +100,6 @@ def objective(trial, config):
     optional_clf_params = {}
     kernel = trial.suggest_categorical("kernel", ["linear", "rbf", "poly", "sigmoid"])
     c = trial.suggest_float("C", 0.001, 1_000.0, log=True)
-    # c = trial.suggest_float("C", 0.01, 1_000.0, step=0.01)
     if kernel in kernels_set_1:
         optional_clf_params["gamma"] = trial.suggest_float(
             "gamma", 0.0001, 10.0, log=True
@@ -118,8 +117,6 @@ def objective(trial, config):
 
     # Weights of input parameter groups optimization
     weights = {w: trial.suggest_float(w, 0.0, 1.0, step=0.1) for w in weights_to_opti}
-    # conf_copy = copy.deepcopy(config)
-    # conf_copy[weights_key] = weights
     config[weights_key] = weights
 
     # Filtering hotspots or not optimization
@@ -127,7 +124,7 @@ def objective(trial, config):
     config[hotspots_key] = hotspots
 
     train_data, train_y, test_data, test_y, _, _ = ds.transforming_Braun_dataset(
-        config, dimension_of_embedding_vectors=v_len
+        config, dimension_of_embedding_vectors=v_len, cut_input_params=True
     )
     train_data, train_y = oversample_x_y(train_data, train_y)
 
@@ -193,7 +190,7 @@ if __name__ == "__main__":
     config[hotspots_key] = best_hotspots
 
     train_data, train_y, test_data, test_y, _, _ = ds.transforming_Braun_dataset(
-        config, dimension_of_embedding_vectors=best_v_len
+        config, dimension_of_embedding_vectors=best_v_len, cut_input_params=True
     )
     _, y_pred, y_proba = svm_train_test(
         train_data, train_y, test_data, clf_kwargs=best_svm_params

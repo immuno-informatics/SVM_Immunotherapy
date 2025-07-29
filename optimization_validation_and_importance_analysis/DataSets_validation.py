@@ -2,9 +2,9 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import Normalizer
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.decomposition import PCA
+# from sklearn.decomposition import PCA
 from sklearn.preprocessing import KBinsDiscretizer
-from sklearn.feature_selection import mutual_info_regression
+# from sklearn.feature_selection import mutual_info_regression
 import warnings
 warnings.filterwarnings("ignore", message=r"Passing", category=FutureWarning)
 warnings.filterwarnings("ignore", message=r"Passing", category=UserWarning)
@@ -25,7 +25,10 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
 
     variation_keys = ["Chromosome", "Start_position", "End_position"]
     out = data[variation_keys + contig_values_to_experiment_with].value_counts()
+    # TAKE ALL MUTATIONS
+    # out = out.loc[out > 3]
     out = out.loc[out > 0]
+    # TAKE ALL MUTATIONS
 
     out = out.reset_index(name='Count')
     removed = None
@@ -152,7 +155,7 @@ def param_check(params, type):
         return False
 
 
-def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000):
+def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_input_params=False):
     if os.path.exists('../data/Braun_2020_ALL_UNIQUE_final_reduced.csv') and not param_check(params, "recompute"):
         ##print("Loading reduced dataset")
         new_data = pd.read_csv('../data/Braun_2020_ALL_UNIQUE_final_reduced.csv')
@@ -269,16 +272,26 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000):
     new_data_test[TF_columns] = scaler.transform(new_data_test[TF_columns])
     #print("MinMax Scaler done")
 
+    # COLUMNS FILTERING
+    if cut_input_params:
+        ok_columns = ["CF_Sex", "CF_Age", "MT_"]
+        new_data_train = new_data_train[[c for c in new_data_train.columns if c.startswith(tuple(ok_columns))]]
+        new_data_test = new_data_test[[c for c in new_data_test.columns if c.startswith(tuple(ok_columns))]]
+    # COLUMNS FILTERING
+
     # Relative weights among groups of features
 
     if "weights" in params:
         weights = params["weights"]
-        TF_columns = [x for x in new_data.columns if x.startswith("TF_")]
-        GE_columns = [x for x in new_data.columns if x.startswith("GE_")]
-        BP_columns = [x for x in new_data.columns if x.startswith("BP_")]
+        TF_columns = [x for x in new_data_train.columns if x.startswith("TF_")]
+        GE_columns = [x for x in new_data_train.columns if x.startswith("GE_")]
+        BP_columns = [x for x in new_data_train.columns if x.startswith("BP_")]
         MT_columns = [x for x in new_data_train.columns if x.startswith("MT_")]
-        PS_columns = [x for x in new_data.columns if x.startswith("PS_")]
-        CF_columns = [x for x in new_data.columns if x.startswith("CF_")]
+        PS_columns = [x for x in new_data_train.columns if x.startswith("PS_")]
+        CF_columns = [x for x in new_data_train.columns if x.startswith("CF_")]
+        # ARM WEIGHTS
+        Arm_columns = [x for x in new_data_train.columns if x.startswith("Arm")]
+        # ARM WEIGHTS
         if TF_columns:
             new_data_train[TF_columns] = weights["TF"]*scaler.fit_transform(new_data_train[TF_columns])
             new_data_test[TF_columns] = weights["TF"]*scaler.transform(new_data_test[TF_columns])
@@ -288,6 +301,11 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000):
         if BP_columns:
             new_data_train[BP_columns] = weights["BP"]*scaler.fit_transform(new_data_train[BP_columns])
             new_data_test[BP_columns] = weights["BP"]*scaler.transform(new_data_test[BP_columns])
+        # ARM WEIGHTS
+        if Arm_columns:
+            new_data_train[Arm_columns] = weights["Arm"]*scaler.fit_transform(new_data_train[Arm_columns])
+            new_data_test[Arm_columns] = weights["Arm"]*scaler.transform(new_data_test[Arm_columns])
+        # ARM WEIGHTS
         if MT_columns:
             new_data_train[MT_columns] = weights["MT"]*scaler.fit_transform(new_data_train[MT_columns])  # \/
             new_data_test[MT_columns] = weights["MT"]*scaler.transform(new_data_test[MT_columns])
@@ -299,9 +317,10 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000):
             new_data_test[CF_columns] = weights["CF"]*scaler.transform(new_data_test[CF_columns])
 
     # COLUMNS FILTERING
-    # ok_columns = ["CF_Sex", "CF_Age", "MT_"]
-    # new_data_train = new_data_train[[c for c in new_data_train.columns if c.startswith(tuple(ok_columns))]]
-    # new_data_test = new_data_test[[c for c in new_data_test.columns if c.startswith(tuple(ok_columns))]]
+    # if cut_input_params:
+    #     ok_columns = ["CF_Sex", "CF_Age", "MT_"]
+    #     new_data_train = new_data_train[[c for c in new_data_train.columns if c.startswith(tuple(ok_columns))]]
+    #     new_data_test = new_data_test[[c for c in new_data_test.columns if c.startswith(tuple(ok_columns))]]
     # COLUMNS FILTERING
 
     norm = Normalizer()
