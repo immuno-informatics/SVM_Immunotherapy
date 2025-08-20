@@ -30,8 +30,6 @@ from sklearn.metrics import roc_auc_score  # noqa: E402
 from sklearn.model_selection import PredefinedSplit  # noqa: E402
 from sklearn.model_selection import cross_val_score  # noqa: E402
 
-# from tqdm import tqdm  # noqa: E402
-
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 yeloh_seed = 2137
@@ -49,11 +47,11 @@ opt_n_jobs = 1  # Results are unreproducible if > 1
 # Also, if > 1, there are some strange things going
 # on with the results vs. the evaluation at the end
 opt_max_stagnation_trials = 30_000
-opt_db_name = "db.sqlite3"
+opt_db_name = "svm-full-db.sqlite3"
 #    Persistent storage (analyze with `optuna-dashboard`):
-# opt_storage = f"sqlite:///{results_dir.joinpath(opt_db_name)}"
+opt_storage = f"sqlite:///{results_dir.joinpath(opt_db_name)}"
 #    Uncomment to disable persistent storage:
-opt_storage = None
+# opt_storage = None
 
 cv_n_jobs = 1
 cv_scoring = "balanced_accuracy"
