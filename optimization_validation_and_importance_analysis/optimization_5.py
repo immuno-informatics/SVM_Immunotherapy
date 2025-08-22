@@ -42,6 +42,10 @@ results_dir.mkdir(parents=True, exist_ok=True)
 
 # Config
 
+# Set `True` if you want to use only age, gender, and mutation data:
+cut_input_params = True
+
+# Optuna configuration
 opt_n_trials = 25_000
 opt_n_jobs = 1  # Results are unreproducible if > 1
 # Also, if > 1, there are some strange things going
@@ -61,7 +65,10 @@ svc_core_args = {"probability": True, "random_state": yeloh_seed}
 label_key = "plot_label"
 weights_key = "weights"
 hotspots_key = "hotspots"
-weights_to_opti = frozenset({"CF", "MT"})
+if cut_input_params:
+    weights_to_opti = frozenset({"CF", "MT"})
+else:
+    weights_to_opti = frozenset({"PS", "TF", "CF", "BP", "MT", "GE", "Arm"})
 
 v_len_name = "v_len"
 
@@ -122,7 +129,7 @@ def objective(trial, config):
     config[hotspots_key] = hotspots
 
     train_data, train_y, test_data, test_y, _, _ = ds.transforming_Braun_dataset(
-        config, dimension_of_embedding_vectors=v_len, cut_input_params=True
+        config, dimension_of_embedding_vectors=v_len, cut_input_params=cut_input_params
     )
     train_data, train_y = oversample_x_y(train_data, train_y)
 
@@ -188,7 +195,9 @@ if __name__ == "__main__":
     config[hotspots_key] = best_hotspots
 
     train_data, train_y, test_data, test_y, _, _ = ds.transforming_Braun_dataset(
-        config, dimension_of_embedding_vectors=best_v_len, cut_input_params=True
+        config,
+        dimension_of_embedding_vectors=best_v_len,
+        cut_input_params=cut_input_params,
     )
     _, y_pred, y_proba = svm_train_test(
         train_data, train_y, test_data, clf_kwargs=best_svm_params

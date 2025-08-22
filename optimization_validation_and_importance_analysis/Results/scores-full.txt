@@ -1,0 +1,32 @@
+Baseline:
+  Accuracy: 0.807
+  Precision: 0.750
+  Recall: 0.632
+  F1 Score: 0.686
+  ROC AUC: 0.781
+    _MEAN_: 0.731
+    BA: 0.763
+Peptide level:
+  Accuracy: 0.825
+  Precision: 0.714
+  Recall: 0.789
+  F1 Score: 0.750
+  ROC AUC: 0.852
+    _MEAN_: 0.786
+    BA: 0.816
+Contig level:
+  Accuracy: 0.807
+  Precision: 0.682
+  Recall: 0.789
+  F1 Score: 0.732
+  ROC AUC: 0.812
+    _MEAN_: 0.764
+    BA: 0.803
+Scaffold level:
+  Accuracy: 0.842
+  Precision: 0.857
+  Recall: 0.632
+  F1 Score: 0.727
+  ROC AUC: 0.759
+    _MEAN_: 0.763
+    BA: 0.789
