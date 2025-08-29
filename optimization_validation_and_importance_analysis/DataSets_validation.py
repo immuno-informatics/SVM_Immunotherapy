@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import Normalizer
@@ -9,10 +10,8 @@ import warnings
 warnings.filterwarnings("ignore", message=r"Passing", category=FutureWarning)
 warnings.filterwarnings("ignore", message=r"Passing", category=UserWarning)
 
-import os
 
-
-def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension_of_embedding_vectors, patients, hotspots, random_contigs, contig_file=False,to_remove=None):
+def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension_of_embedding_vectors, patients, hotspots, random_contigs, contig_file=False, to_remove=None, deletion_type=None):
     if contig_file:
         data = pd.read_csv(contig_file, sep="\t", low_memory=False)
     else:
@@ -20,20 +19,40 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
     if random_contigs:
         raise ValueError("You don't want to do this rn")
 
+    removed = None
+    out_shape = None
+
+    if type(to_remove) is str:
+        if deletion_type == "contigs":
+            del_col = "contig"
+        elif deletion_type == "scaffolds":
+            del_col = "Id"
+        try:
+            data = data.loc[data[del_col] != to_remove]
+        except KeyError as e:
+            raise e("Did you set a correct value for `deletion_type`?")
+
     if hotspots:
         data = data.loc[data["contig"].notna()]
 
     variation_keys = ["Chromosome", "Start_position", "End_position"]
     out = data[variation_keys + contig_values_to_experiment_with].value_counts()
+
     # TAKE ALL MUTATIONS
     # out = out.loc[out > 3]
     out = out.loc[out > 0]
     # TAKE ALL MUTATIONS
 
-    out = out.reset_index(name='Count')
-    removed = None
-    if to_remove:
-        removed = out.iloc[[to_remove]]
+    out = out.reset_index(name="Count")
+
+    if type(to_remove) is int:
+        # OMG
+        out_shape = out.shape[0]
+        try:
+            removed = out.iloc[[to_remove]]
+        except IndexError:
+            return None, None, out_shape
+        # OMG
         out = out.drop([to_remove])
 
     np.random.seed(100)
@@ -95,67 +114,17 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
 
     augmented_data.rename(columns=replac, inplace=True)
 
-    return augmented_data, removed
-
-# bp = ["BP_chr5q23", "BP_chr16q24", "BP_chr8q24", "BP_chr13q11", "BP_chr7p21", "BP_chr10q23",
-#       "BP_chr13q13", "BP_chr10q21", "BP_chr1p13", "BP_chrxp21", "BP_chr4q12", "BP_chr6q13", "BP_chr2p22",
-#       "BP_chr18q23", "BP_chr8p11", "BP_chr1p11", "BP_chr9p12", "BP_chr20p12", "BP_chr7p13", "BP_chr4p16",
-#       "BP_chr8q22", "BP_chr14q11", "BP_chryp11", "BP_chr10q25", "BP_chr11q", "BP_chr4p14", "BP_chr15q26",
-#       "BP_chr12q15", "BP_chr4p12", "BP_chr9q12", "BP_chr2q22", "BP_chr9q33", "BP_chr18p", "BP_chr3q28",
-#       "BP_chr12q14", "BP_chr2q36", "BP_chr9q22", "BP_chr3p22", "BP_chrxq", "BP_chr6p11", "BP_chr12q24",
-#       "BP_chr2q32", "BP_chr4q35", "BP_chr3p14", "BP_chr22q", "BP_chr15q24", "BP_chr2p", "BP_chr13q31",
-#       "BP_chr19p13", "BP_chr12q22", "BP_chr7p", "BP_chr11q22", "BP_chrxq28", "BP_chr16q22",
-#       "BP_chr11q24", "BP_chr5q12", "BP_chr10p11", "BP_chr5q21", "BP_chr14q21", "BP_chrxq12",
-#       "BP_chr1p35", "BP_chr3p12", "BP_chr4q21", "BP_chr10p15", "BP_chr18q21", "BP_chr1p33",
-#       "BP_chr11q12", "BP_chr17q22", "BP_chr1p31", "BP_chr10p13", "BP_chr14q13", "BP_chr2q24",
-#       "BP_chr22q13", "BP_chr15q11", "BP_chr1q43", "BP_chr19p", "BP_chr3q24", "BP_chr22q11", "BP_chr7p11",
-#       "BP_chr16q13", "BP_chr1p22", "BP_chr12p", "BP_chr2q11", "BP_chr9p21", "BP_chr4q33", "BP_chr2p11",
-#       "BP_chr2q34", "BP_chr17q23", "BP_chr14q23", "BP_chr5q33", "BP_chr6q27", "BP_chr3q26",
-#       "BP_chr10q11", "BP_chr5p12", "BP_chr1q21", "BP_chr4q24", "BP_chr7q31", "BP_chr6p21", "BP_chr17q",
-#       "BP_chr5q15", "BP_chr2q13", "BP_chr1q23", "BP_chr6q23", "BP_chr11q14", "BP_chr5p14", "BP_chr5q31",
-#       "BP_chr2p24", "BP_chr9p11", "BP_chr4q26", "BP_chr1q25", "BP_chrxq11", "BP_chr5q14", "BP_chr4q28",
-#       "BP_chr1q42", "BP_chr6p25", "BP_chr13q34", "BP_chr8q12", "BP_chr4q22", "BP_chr7q22", "BP_chr6p23",
-#       "BP_chr8p21", "BP_chr5q35", "BP_chr13q32", "BP_chr12q12", "BP_chr3p24", "BP_chr7q33",
-#       "BP_chr12p12", "BP_chr9p23", "BP_chr7p14", "BP_chr6q21", "BP_chryq11", "BP_chr15q13", "BP_chr3q22",
-#       "BP_chr6q15", "BP_chr4q31", "BP_chr3q12", "BP_chr13q22", "BP_chr15q15", "BP_chr3p26",
-#       "BP_chr17q12", "BP_chr11p12", "BP_chr7p12", "BP_chr6q", "BP_chrxq21", "BP_chr19q13", "BP_chr16p12",
-#       "BP_chr1q32", "BP_chr8p23", "BP_chrxq23", "BP_chr2p15", "BP_chr18q12", "BP_chr17p13", "BP_chr14q",
-#       "BP_chr11p14", "BP_chr1q", "BP_chr9q32", "BP_chr20q12", "BP_chr14q32", "BP_chr7p22", "BP_chr5q",
-#       "BP_chr21q21", "BP_chr2p13", "BP_chr16q12", "BP_chr3p", "BP_chr10q22", "BP_chr17p11",
-#       "BP_chr15q22", "BP_chr10q", "BP_chr1q31", "BP_chr10q24", "BP_chr13q14", "BP_chr11p", "BP_chr14q12",
-#       "BP_chr4q", "BP_chr1p34", "BP_chr2q23", "BP_chr6q16", "BP_chr16q21", "BP_chr9q13", "BP_chr15q25",
-#       "BP_chr18q22", "BP_chr2q21", "BP_chr3p25", "BP_chr20p13", "BP_chr8q21", "BP_chr4p15",
-#       "BP_chr12p11", "BP_chr9p13", "BP_chr2q37", "BP_chr3q29", "BP_chr16p", "BP_chr13q12", "BP_chr3p21",
-#       "BP_chr1p12", "BP_chr4p11", "BP_chr10q26", "BP_chr13q21", "BP_chr15q23", "BP_chr2p21",
-#       "BP_chr19q12", "BP_chr20p11", "BP_chr5q22", "BP_chr4p13", "BP_chr8q23", "BP_chr19p12",
-#       "BP_chr21q22", "BP_chrxq25", "BP_chr4q34", "BP_chr11q23", "BP_chr10p14", "BP_chr9q34", "BP_chr15q",
-#       "BP_chr7q", "BP_chr2q33", "BP_chr8q", "BP_chr22q12", "BP_chr6p12", "BP_chr7q21", "BP_chr16q23",
-#       "BP_chr11q25", "BP_chr5q11", "BP_chr21q11", "BP_chr11q13", "BP_chr9p", "BP_chr17q25", "BP_chr6q25",
-#       "BP_chr10p12", "BP_chr7q36", "BP_chrxp11", "BP_chr9q21", "BP_chrxp22", "BP_chr1p32", "BP_chr12q21",
-#       "BP_chr8p12", "BP_chr11q11", "BP_chr12q23", "BP_chrxq13", "BP_chr1p36", "BP_chr2p23", "BP_chr2q31",
-#       "BP_chr3p13", "BP_chr2q", "BP_chrxq27", "BP_chr3p11", "BP_chr17q21", "BP_chr13q33", "BP_chr11p15",
-#       "BP_chr1p21", "BP_chr3q25", "BP_chr3q13", "BP_chr5p13", "BP_chr14q22", "BP_chr9p22", "BP_chr4q27",
-#       "BP_chr2p25", "BP_chr6p24", "BP_chr1p", "BP_chr2q12", "BP_chr8q13", "BP_chr2p16", "BP_chr12q",
-#       "BP_chr4q25", "BP_chr20q13", "BP_chr5q34", "BP_chr17q24", "BP_chr2q14", "BP_chr7q35", "BP_chr5q13",
-#       "BP_chr19q", "BP_chr5q32", "BP_chr20q11", "BP_chr6q24", "BP_chr5p15", "BP_chr1q22", "BP_chr6q26",
-#       "BP_chr6p22", "BP_chr11q21", "BP_chr1q41", "BP_chr15q14", "BP_chr8q11", "BP_chr1q24", "BP_chr4q23",
-#       "BP_chrxq26", "BP_chr3q23", "BP_chr3p23", "BP_chr12q13", "BP_chr9q31", "BP_chr2p12", "BP_chr1q44",
-#       "BP_chr7q34", "BP_chr2q35", "BP_chr6q14", "BP_chr16p13", "BP_chr18q11", "BP_chr3q27", "BP_chr7q11",
-#       "BP_chr3q21", "BP_chr16p11", "BP_chr12p13", "BP_chr7p15", "BP_chr3q11", "BP_chr6q22", "BP_chr7q32",
-#       "BP_chr12q11", "BP_chr18p11", "BP_chr17q11", "BP_chrxq24", "BP_chr6q12", "BP_chr3q", "BP_chr6p",
-#       "BP_chrxq22", "BP_chr9p24", "BP_chr11p11", "BP_chr4q13", "BP_chr16q11", "BP_chr8p22",
-#       "BP_chr14q24", "BP_chr1q12", "BP_chr15q21", "BP_chr11p13", "BP_chr17p12", "BP_chr4q32",
-#       "BP_chr4q11", "BP_chr14q31", "BP_chr2p14"]
+    return augmented_data, removed, out_shape
 
 
-def param_check(params, type):
-    if type in params:
-        return params[type]
+def param_check(params, name):
+    if name in params:
+        return params[name]
     else:
         return False
 
 
-def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_input_params=False):
+def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_input_params=False, deletion_type=None):
     if os.path.exists('../data/Braun_2020_ALL_UNIQUE_final_reduced.csv') and not param_check(params, "recompute"):
         ##print("Loading reduced dataset")
         new_data = pd.read_csv('../data/Braun_2020_ALL_UNIQUE_final_reduced.csv')
@@ -190,16 +159,22 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         "TF_ImmunoPhenotype",
         "TF_Days_from_TumorSample_Collection_and_Start_of_Trial_Therapy"], axis=1)
 
+    mut_num = None
     if param_check(params, "with_mutations"):
         patients = new_data["SUBJID"].drop_duplicates()
-        mutations, removed = mutation_vector_base_per_patient(param_check(params, "HS_features"), dimension_of_embedding_vectors, patients, param_check(params, "hotspots"),param_check(params, "random_contigs"), contig_file = param_check(params, "contig_file"),to_remove = param_check(params, "exclude_mutation") )
+        mutations, removed, mut_num = mutation_vector_base_per_patient(param_check(params, "HS_features"), dimension_of_embedding_vectors, patients, param_check(params, "hotspots"),param_check(params, "random_contigs"), contig_file = param_check(params, "contig_file"),to_remove = param_check(params, "exclude_mutation"), deletion_type=deletion_type)
+        # OMG
+        if mutations is None:
+            return None, None, None, None, None, None, mut_num
+        # OMG
         new_data = pd.merge(new_data, mutations, on=["SUBJID"], how="outer")
         # out = new_data.loc[new_data["0###"].isnull()]
     new_data = new_data.drop("SUBJID", axis=1)
 
     #new_data = new_data.drop([x for x in new_data.columns if x.startswith("TF_")], axis=1)
 
-    if "Unnamed: 0" in new_data: new_data = new_data.drop("Unnamed: 0", axis=1)
+    if "Unnamed: 0" in new_data:
+        new_data = new_data.drop("Unnamed: 0", axis=1)
 
     new_data.rename(columns={"Received_Prior_Therapy":"CF_Received_Prior_Therapy",
                              "Sex":"CF_Sex",
@@ -328,4 +303,4 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     new_data_test[new_data_test.columns] = norm.fit_transform(new_data_test[new_data_test.columns])
     #print("Normalizer done")
 
-    return new_data_train, train_classification_labels, new_data_test, test_classification_labels, test_pfs, removed if "removed" in locals() else None
+    return new_data_train, train_classification_labels, new_data_test, test_classification_labels, test_pfs, removed if "removed" in locals() else None, mut_num
