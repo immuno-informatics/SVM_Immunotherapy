@@ -175,7 +175,7 @@ if __name__ == "__main__":
     else:
         iterator = None
 
-    for stuff_to_remove in tqdm(iterator):
+    for stuff_to_remove in tqdm(iterator, desc=model_name):
         config["exclude_mutation"] = stuff_to_remove
         results_frame, _ = svm_experiment(config, cut_input_params, deletion_type)
         results_frame.insert(0, exclude_mutation_col, stuff_to_remove)
