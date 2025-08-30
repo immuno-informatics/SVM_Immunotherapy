@@ -20,7 +20,6 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
         raise ValueError("You don't want to do this rn")
 
     removed = None
-    out_shape = None
 
     if type(to_remove) is str:
         if deletion_type == "contigs":
@@ -45,9 +44,9 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
 
     out = out.reset_index(name="Count")
 
+    out_shape = out.shape[0]
     if type(to_remove) is int:
         # OMG
-        out_shape = out.shape[0]
         try:
             removed = out.iloc[[to_remove]]
         except IndexError:
