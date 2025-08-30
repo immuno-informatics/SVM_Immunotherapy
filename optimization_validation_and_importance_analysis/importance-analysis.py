@@ -23,13 +23,6 @@ from sklearn.metrics import (  # noqa: E402
 )
 from tqdm import tqdm  # noqa: E402
 
-# import polars as pl
-# import matplotlib.pyplot as plt
-# import kaplanmeier as km
-# import pymysql
-# import sys
-# import optuna
-
 warnings.filterwarnings("ignore")
 random.seed(1024)
 np.random.seed(1024)
@@ -39,7 +32,6 @@ yeloh_seed = 2137
 cut_input_params = True
 
 int_cols = [
-    "Chromosome",
     "Start_position",
     "End_position",
     "Count",
@@ -52,9 +44,17 @@ clf_params_label = "clf_params"
 model_name_label = "plot_label"
 contig_file_label = "contig_file"
 
+base_lvl_name = "Baseline"
 pep_lvl_name = "Peptide level"
 cont_lvl_name = "Contig level"
 scaff_lvl_name = "Scaffold level"
+
+scaffold_col = "scaffold"
+prot_change_col = "Protein_Change"
+
+exclude_mutation_col = "exclude_mutation"
+
+list_separator = ";"
 
 results_dir = Path("Results")
 results_dir.mkdir(parents=True, exist_ok=True)
@@ -108,20 +108,10 @@ def svm_experiment(config, cut_input_params, deletion_type):
         )
     )
 
-    # OMG
     if train_data is None:
         return None, mut_num
-    # OMG
 
-    # possible_svm_models = [{"kernel": "rbf"}]
-
-    # local_results_frames = pd.DataFrame()
-    # index = 0
-    # for params in possible_svm_models:
     results = {}
-    # results["METHOD"] = "Predictor:SVM" + str(clf_params)
-    results["Info"] = str(config)
-    # print("SVM Meta-parameters : " + str(clf_params))
 
     _, svm_linear_preds, svm_linear_prob = svm_train_test(
         train_data, train_y, test_data, clf_kwargs=clf_params
@@ -136,25 +126,22 @@ def svm_experiment(config, cut_input_params, deletion_type):
 
     return results_frame, mut_num
 
-    # if local_results_frames.empty:
-    #     local_results_frames = [results_frame]
-    # else:
-    #     local_results_frames = [local_results_frames, results_frame]
-    # local_results_frames = pd.concat(local_results_frames)
-    # # index += 1
-    # return pd.DataFrame(local_results_frames), None
-
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit("You must specify index of a model")
     m_idx = int(sys.argv[1])
 
-    config = copy.deepcopy(cfg.configurations[m_idx])
+    try:
+        config = copy.deepcopy(cfg.configurations[m_idx])
+    except IndexError:
+        raise IndexError(f"Theres no model at index {m_idx}")
+
+    muts = pd.read_csv(config[contig_file_label], sep="\t", low_memory=False)
 
     model_name = config[model_name_label]
 
-    if model_name == pep_lvl_name:
+    if model_name in (pep_lvl_name, base_lvl_name):
         deletion_type = "mutations"
     elif model_name == cont_lvl_name:
         deletion_type = "contigs"
@@ -166,27 +153,24 @@ if __name__ == "__main__":
     overall_results = []
 
     results_frame, mut_num = svm_experiment(config, cut_input_params, deletion_type)
-
+    results_frame.insert(0, exclude_mutation_col, pd.NA)
     overall_results.append(results_frame)
 
-    if model_name == pep_lvl_name:
-        iterator = range(5)  # mut_num
-    elif model_name == cont_lvl_name or model_name == scaff_lvl_name:
-        conts_scaffs_file = config[contig_file_label]
-        conts_scaffs = pd.read_csv(conts_scaffs_file, sep="\t", low_memory=False)
+    if model_name in (pep_lvl_name, base_lvl_name):
+        iterator = range(mut_num)
+    elif model_name in (cont_lvl_name, scaff_lvl_name):
         common_cols = ["unique_peptides", "popcov_but_sqrt"]
         if model_name == cont_lvl_name:
             del_col = "contig"
         else:
-            del_col = "Id"
+            muts = muts.rename(columns={"Id": scaffold_col})
+            del_col = scaffold_col
         squeeze_cols = [del_col] + common_cols
-        conts_scaffs = conts_scaffs.loc[conts_scaffs[del_col].notna()][
-            squeeze_cols
-        ].value_counts()
-        cs_ids = conts_scaffs.index.get_level_values(del_col)
+        muts_vc = muts.loc[muts[del_col].notna()][squeeze_cols].value_counts()
+        cs_ids = muts_vc.index.get_level_values(del_col)
         if len(cs_ids) != len(cs_ids.unique()):
             raise ValueError("There's a problem with IDs")
-        conts_scaffs = conts_scaffs.reset_index(name="Count")
+        muts_vc = muts_vc.reset_index(name="Count")
         iterator = cs_ids
     else:
         iterator = None
@@ -194,6 +178,12 @@ if __name__ == "__main__":
     for stuff_to_remove in tqdm(iterator):
         config["exclude_mutation"] = stuff_to_remove
         results_frame, _ = svm_experiment(config, cut_input_params, deletion_type)
+        results_frame.insert(0, exclude_mutation_col, stuff_to_remove)
+        if model_name in (cont_lvl_name, scaff_lvl_name):
+            cs_info = muts_vc.loc[muts_vc[del_col] == stuff_to_remove].reset_index(
+                drop=True
+            )
+            results_frame = pd.concat([results_frame, cs_info], axis=1)
         overall_results.append(results_frame)
 
     overall_results = pd.concat(overall_results, ignore_index=True)
@@ -201,8 +191,43 @@ if __name__ == "__main__":
     for c in int_cols:
         if c in overall_results.columns:
             overall_results[c] = overall_results[c].astype("Int64")
+    if model_name in (pep_lvl_name, base_lvl_name):
+        overall_results[exclude_mutation_col] = overall_results[
+            exclude_mutation_col
+        ].astype("Int64")
 
-    # overall_results.to_csv(
-    #     results_dir / f"mutation-remove-experiments-{model_name.replace(' ', '_')}.csv",
-    #     index=False,
-    # )
+    # Adding 'Protein_Change' info
+    desc = "Adding additional info"
+    protein_change = [""]
+    if model_name in (pep_lvl_name, base_lvl_name):
+        for i in tqdm(range(1, len(overall_results)), desc=desc):
+            row = overall_results.iloc[i]
+            chr = row["Chromosome"]
+            st_p = row["Start_position"]
+            en_p = row["End_position"]
+            m = muts[
+                (muts["Chromosome"] == chr)
+                & (muts["Start_position"] == st_p)
+                & (muts["End_position"] == en_p)
+            ]
+            pc = m[prot_change_col].fillna(value="").unique().tolist()
+            pc = list_separator.join(pc)
+            protein_change.append(pc)
+    else:
+        for cs in tqdm(overall_results[del_col][1:], desc=desc):
+            pc = (
+                muts[muts[del_col] == cs][prot_change_col]
+                .fillna(value="")
+                .unique()
+                .tolist()
+            )
+            pc = list_separator.join(pc)
+            protein_change.append(pc)
+    protein_change = pd.Series(protein_change, name=prot_change_col)
+    overall_results = pd.concat([overall_results, protein_change], axis=1)
+    #
+
+    overall_results.to_csv(
+        results_dir / f"mutation-remove-experiments-{model_name.replace(' ', '_')}.csv",
+        index=False,
+    )

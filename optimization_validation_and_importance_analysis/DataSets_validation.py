@@ -29,8 +29,8 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
             del_col = "Id"
         try:
             data = data.loc[data[del_col] != to_remove]
-        except KeyError as e:
-            raise e("Did you set a correct value for `deletion_type`?")
+        except KeyError:
+            raise KeyError("Did you set a correct value for `deletion_type`?")
 
     if hotspots:
         data = data.loc[data["contig"].notna()]
