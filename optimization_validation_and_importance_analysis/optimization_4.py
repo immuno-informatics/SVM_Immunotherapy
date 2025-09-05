@@ -16,19 +16,25 @@ patch_sklearn()
 
 import optuna  # noqa: E402
 from optuna.samplers import TPESampler  # noqa: E402
-from optuna.terminator import BestValueStagnationEvaluator  # noqa: E402
-from optuna.terminator import StaticErrorEvaluator  # noqa: E402
-from optuna.terminator import Terminator  # noqa: E402
+from optuna.terminator import (  # noqa: E402
+    BestValueStagnationEvaluator,
+    StaticErrorEvaluator,
+    Terminator,
+)
 from optuna.terminator.callback import TerminatorCallback  # noqa: E402
 from sklearn import svm  # noqa: E402
-from sklearn.metrics import accuracy_score  # noqa: E402
-from sklearn.metrics import balanced_accuracy_score  # noqa: E402
-from sklearn.metrics import f1_score  # noqa: E402
-from sklearn.metrics import precision_score  # noqa: E402
-from sklearn.metrics import recall_score  # noqa: E402
-from sklearn.metrics import roc_auc_score  # noqa: E402
-from sklearn.model_selection import PredefinedSplit  # noqa: E402
-from sklearn.model_selection import cross_val_score  # noqa: E402
+from sklearn.metrics import (  # noqa: E402
+    accuracy_score,
+    balanced_accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
+from sklearn.model_selection import (  # noqa: E402
+    PredefinedSplit,
+    cross_val_score,
+)
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 

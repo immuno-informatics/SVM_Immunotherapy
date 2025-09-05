@@ -1,3 +1,5 @@
+"""."""
+
 import copy
 import random
 import sys
@@ -16,6 +18,7 @@ from imblearn.over_sampling import SMOTE  # noqa: E402
 from sklearn import svm  # noqa: E402
 from sklearn.metrics import (  # noqa: E402
     accuracy_score,
+    balanced_accuracy_score,
     f1_score,
     precision_score,
     recall_score,
@@ -65,7 +68,7 @@ results_dir = Path("Results")
 results_dir.mkdir(parents=True, exist_ok=True)
 
 
-def svm_train_test(train_data, train_y, test_data, verbose=False, clf_kwargs={}):
+def svm_train_test(train_data, train_y, test_data, clf_kwargs={}):
     sm = SMOTE(random_state=432)
     train_data, train_y = sm.fit_resample(train_data, train_y)
     clf = svm.SVC(probability=True, random_state=yeloh_seed, **clf_kwargs)
@@ -74,8 +77,6 @@ def svm_train_test(train_data, train_y, test_data, verbose=False, clf_kwargs={})
     predictions = clf.predict(test_data)
     probs = clf.predict_proba(test_data)
     probSV = [i[1] for i in probs]
-    if verbose:
-        print(probSV)
     new_pd = pd.DataFrame(probSV)
     return clf, predictions, new_pd
 
@@ -97,6 +98,7 @@ def evaluate(ytest, preds, yprobs):
     )
     evaluations["f1_false"] = f1_score(ytest, preds, pos_label=-1, average="binary")
     evaluations["accuracy"] = accuracy_score(ytest, preds)
+    evaluations["balanced_accuracy"] = balanced_accuracy_score(ytest, preds)
     return evaluations
 
 
@@ -231,7 +233,7 @@ if __name__ == "__main__":
             if c in overall_results.columns:
                 overall_results[c] = overall_results[c].astype("Int64")
 
-    # Adding other mutation info
+    # Adding other mutation info to baseline/peptide
     if model_name in (pep_lvl_name, base_lvl_name):
         add_info_single_cols = list(set(add_info_cols) - set(unique_cols))
         add_info = []
