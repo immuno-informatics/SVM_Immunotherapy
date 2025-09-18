@@ -1,5 +1,5 @@
 import os
-# import random
+import random
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import Normalizer
@@ -28,12 +28,14 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
         validation_data = pd.read_csv(validation_contig_file, sep="\t", low_memory=False)
 
         # Fixing lack of `contig` colum
+        if "contig" in validation_data.columns:
+            raise KeyError("'contig' column is present in validation mutation data (in this version it shouldn't)")
         if "Unique_peptides_narrow" in validation_data.columns:
             validation_data["contig"] = validation_data["Unique_peptides_narrow"]
         elif "unique_peptides" in validation_data.columns:
             validation_data["contig"] = validation_data["unique_peptides"]
         else:
-            raise KeyError("No proper 'contig' column in validation mutation data")
+            raise KeyError("No proper 'contig'-like column in validation mutation data")
 
     # LOADING VALIDATION
 
@@ -101,12 +103,12 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
         embedding_vector_matrices[contig_value_to_experiment_with] = embedding_vectors
     # VALIDATION
     if validation_patients is not None:
-        np.random.seed(100)
+        val_rng = np.random.default_rng(2137)
         validation_embedding_vector_matrices = {}
         for contig_value_to_experiment_with in contig_values_to_experiment_with:
             validation_embedding_vector_matrix = np.empty((len(validation_out), dimension_of_embedding_vectors))
             for i in range(len(validation_out)):
-                validation_embedding_vector_matrix[i] = np.random.normal(0, 1. / np.sqrt(dimension_of_embedding_vectors), dimension_of_embedding_vectors)
+                validation_embedding_vector_matrix[i] = val_rng.normal(0, 1. / np.sqrt(dimension_of_embedding_vectors), dimension_of_embedding_vectors)
             validation_embedding_vectors = pd.DataFrame(validation_embedding_vector_matrix)
             validation_embedding_vector_matrices[contig_value_to_experiment_with] = validation_embedding_vectors
     # VALIDATION
@@ -184,7 +186,7 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
         validation_new_out = validation_new_out["SUBJID"].to_frame().reset_index()
         validation_missing_patient_matrix = np.empty((len(validation_new_out), dimension_of_embedding_vectors))
         for i in range(len(validation_new_out)):
-            validation_missing_patient_matrix[i] = np.random.normal(0, 1. / np.sqrt(dimension_of_embedding_vectors), dimension_of_embedding_vectors)
+            validation_missing_patient_matrix[i] = val_rng.normal(0, 1. / np.sqrt(dimension_of_embedding_vectors), dimension_of_embedding_vectors)
     # VALIDATION
 
     missing_patient_matrix_df = pd.DataFrame(missing_patient_matrix)
@@ -236,30 +238,30 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     if validation_features_file is not None:
         validation_features = pd.read_csv(validation_features_file)
 
-        # cut_cols = ['SUBJID', 'PFS', 'Sex', 'Age']
+        cut_cols = ['SUBJID', 'PFS', 'Sex', 'Age']
 
-        # if not all([c in cut_cols for c in validation_features.columns]):
-        #     NotImplementedError("Validation clinical features file has extra columns, for which it was not programmed to work (yet)")
+        if not all([c in cut_cols for c in validation_features.columns]):
+            NotImplementedError("Validation clinical features file has extra columns, for which it was not programmed to work (yet)")
 
-        # #! Dropping NaNs (?)
-        # validation_features = validation_features.dropna()
-        # #
+        #! Dropping NaNs (?)
+        validation_features = validation_features.dropna()
+        #
 
-        # #! Rounding age (?)
-        # validation_features['Age'] = validation_features['Age'].round()
-        # #
+        #! Rounding age (?)
+        validation_features['Age'] = validation_features['Age'].round()
+        #
 
-        # validation_features['Sex'] = validation_features['Sex'].str.lower()
+        validation_features['Sex'] = validation_features['Sex'].str.lower()
 
-        # # Making sure column order is ok, in case
-        # validation_features = validation_features[cut_cols]
+        # Making sure column order is ok, in case
+        validation_features = validation_features[cut_cols]
 
-        # #! Adding dummy columns (?)
-        # validation_dummy_cols = list(set(new_data.columns) - set(validation_features.columns))
+        #! Adding dummy columns (?)
+        validation_dummy_cols = list(set(new_data.columns) - set(validation_features.columns))
         vf_len = validation_features.shape[0]
-        # for d_c in validation_dummy_cols:
-        #     u_org_vals = new_data[d_c].unique()
-        #     validation_features[d_c] = random.choices(u_org_vals, k=vf_len)
+        for d_c in validation_dummy_cols:
+            u_org_vals = new_data[d_c].unique()
+            validation_features[d_c] = random.choices(u_org_vals, k=vf_len)
 
     # LOADING VALIDATION AND ADJUSTING FOR THE LIMITED (CUT) FEATURES VERSION
 
@@ -308,11 +310,7 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         "TF_Days_from_TumorSample_Collection_and_Start_of_Trial_Therapy"], axis=1)
     # VALIDATION
     if validation_features_file is not None:
-        validation_features = validation_features.drop([
-            #"TF_Tumor_Sample_Primary_or_Metastasis",
-            "TF_Site_of_Metastasis",
-            "TF_ImmunoPhenotype",
-            "TF_Days_from_TumorSample_Collection_and_Start_of_Trial_Therapy"], axis=1)
+        validation_features = validation_features.drop(["TF_Site_of_Metastasis", "TF_ImmunoPhenotype", "TF_Days_from_TumorSample_Collection_and_Start_of_Trial_Therapy"], axis=1)
     # VALIDATION
 
     mut_num = None
@@ -338,10 +336,10 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         # VALIDATION
         # out = new_data.loc[new_data["0###"].isnull()]
 
-    # new_data = new_data.drop("SUBJID", axis=1)
+    new_data = new_data.drop("SUBJID", axis=1)
     # VALIDATION
-    # if validation_features_file is not None:
-    #     validation_features = validation_features.drop("SUBJID", axis=1)
+    if validation_features_file is not None:
+        validation_features = validation_features.drop("SUBJID", axis=1)
     # VALIDATION
 
     #new_data = new_data.drop([x for x in new_data.columns if x.startswith("TF_")], axis=1)
@@ -363,23 +361,16 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         validation_features.rename(columns={"Received_Prior_Therapy":"CF_Received_Prior_Therapy", "Sex":"CF_Sex", "Age":"CF_Age"}, inplace=True)
     # VALIDATION
 
-    columns_to_remove = [x for x in new_data.columns if not x.startswith("BP_") and not x.startswith("GE_") and not x.startswith("MT_")]
-    columns_to_remove.remove("TRAIN")
-    columns_to_remove.remove("Outcome")
+    # columns_to_remove = [x for x in new_data.columns if not x.startswith("BP_") and not x.startswith("GE_") and not x.startswith("MT_")]
+    # columns_to_remove.remove("TRAIN")
+    # columns_to_remove.remove("Outcome")
     columns_to_remove = ['PS_MSKCC', 'PS_IMDC', 'TF_Tumor_Sample_Primary_or_Metastasis', 'CF_Received_Prior_Therapy', 'CF_Sex']
     columns_to_remove = columns_to_remove + ['Arm']
     columns_to_discretize = ['TF_Purity', 'TF_Ploidy', 'TF_TMB_Counts', 'TF_TM_Area', 'TF_TM_CD8', 'TF_TM_CD8_Density',
                              'TF_TC_Area', 'TF_TC_CD8', 'TF_TC_CD8_Density', 'TF_TM_TC_Ratio', 'TF_TM_CD8_PERCENT',
                              'TF_TC_CD8_PERCENT', 'CF_Age']
-    # VALIDATION
-    # if validation_features_file is not None:
-    #     validation_columns_to_remove = ['CF_Sex']
-    #     validation_columns_to_discretize = ['CF_Age']
-    # VALIDATION
-
 
     discretizer = KBinsDiscretizer(n_bins=10,encode='ordinal', strategy='quantile')
-
 
     new_data[columns_to_discretize] = discretizer.fit_transform(new_data[columns_to_discretize])
     # VALIDATION
@@ -392,14 +383,13 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     #### REMEBER TO PUT BACK 'Arm', in columns_to_remove
     # >>>>>>>>>>>>>>>>>>>>>>>> VERY STUPID : DROPPING ARM
 
-
     #data_for_revert_exp = new_data[['TRAIN','Outcome','Arm']]
     new_data = pd.get_dummies(new_data, prefix_sep="###", dtype=float, columns=columns_to_remove+columns_to_discretize)
     # VALIDATION
     if validation_features_file is not None:
         validation_features = pd.get_dummies(validation_features, prefix_sep="###", dtype=float, columns=columns_to_remove+columns_to_discretize)
-        # This is a fix only for this particular case -- there are no high enough values in 'Age'
-        # validation_features.insert(validation_features.columns.get_loc("CF_Age###8.0")+1, "CF_Age###9.0", [0.0]*vf_len)
+        # THIS IS A FIX ONLY FOR THIS PARTICULAR CASE -- THERE ARE NO HIGH ENOUGH VALUES IN 'Age'
+        validation_features.insert(validation_features.columns.get_loc("CF_Age###8.0")+1, "CF_Age###9.0", [0.0]*vf_len)
         #
     # VALIDATION
 
@@ -460,14 +450,11 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
 
     # COLUMNS FILTERING
     if cut_input_params:
-        id_validation = None
-        id_train = new_data_train["SUBJID"]
         ok_columns = ["CF_Sex", "CF_Age", "MT_"]
         new_data_train = new_data_train[[c for c in new_data_train.columns if c.startswith(tuple(ok_columns))]]
         new_data_test = new_data_test[[c for c in new_data_test.columns if c.startswith(tuple(ok_columns))]]
         # VALIDATION
         if validation_features_file is not None:
-            id_validation = validation_features["SUBJID"]
             validation_features = validation_features[[c for c in validation_features.columns if c.startswith(tuple(ok_columns))]]
         # VALIDATION
     # COLUMNS FILTERING
@@ -536,4 +523,4 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     # VALIDATION
     #print("Normalizer done")
 
-    return new_data_train, train_classification_labels, new_data_test, test_classification_labels, test_pfs, removed if "removed" in locals() else None, mut_num, test_pfs_cnsr, validation_features, validation_classification_labels, validation_pfs, id_train, id_validation
+    return new_data_train, train_classification_labels, new_data_test, test_classification_labels, test_pfs, removed if "removed" in locals() else None, mut_num, test_pfs_cnsr, validation_features, validation_classification_labels, validation_pfs

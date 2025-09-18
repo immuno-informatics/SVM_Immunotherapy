@@ -14,11 +14,15 @@ patch_sklearn()
 from sklearn import svm  # noqa: E402
 from sklearn.metrics import accuracy_score  # noqa: E402
 from sklearn.metrics import f1_score  # noqa: E402
+
 # from sklearn.metrics import fbeta_score  # noqa: E402
 # from sklearn.metrics import make_scorer  # noqa: E402
 # from sklearn.metrics import matthews_corrcoef  # noqa: E402
-from sklearn.metrics import (precision_score, recall_score,  # noqa: E402
-                             roc_auc_score)
+from sklearn.metrics import (  # noqa: E402
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 from sklearn.model_selection import GridSearchCV, PredefinedSplit  # noqa: E402
 from tqdm import tqdm  # noqa: E402
 
@@ -26,6 +30,9 @@ random.seed(1024)
 np.random.seed(1024)
 
 # Config
+
+# Set `True` if you want to use only age, gender, and mutation data:
+cut_input_params = False
 
 mutations_vector_len_range = np.linspace(1, 4000, num=4000, dtype=int)
 # mutations_vector_len_range = [887, 243, 375, 881]
@@ -130,8 +137,10 @@ for config in tqdm(cfg.configurations):
     best_scores[model_label] = "None"
 
     for v_len in tqdm(mutations_vector_len_range, leave=False):
-        train_data, train_y, test_data, test_y, test_pfs, _ = (
-            ds.transforming_Braun_dataset(config, v_len)
+        train_data, train_y, test_data, test_y, _, _, _, _, _, _, _ = (
+            ds.transforming_Braun_dataset(
+                config, v_len, cut_input_params=cut_input_params
+            )
         )
 
         search = grid_searching(train_data, train_y, test_data, test_y)

@@ -106,13 +106,23 @@ def svm_experiment(config, cut_input_params, deletion_type):
     dimension_of_embedding_vectors = config[mut_vec_len_label]
     clf_params = config[clf_params_label]
 
-    train_data, train_y, test_data, test_y, _, excluded_mutation, mut_num = (
-        ds.transforming_Braun_dataset(
-            config,
-            dimension_of_embedding_vectors=dimension_of_embedding_vectors,
-            cut_input_params=cut_input_params,
-            deletion_type=deletion_type,
-        )
+    (
+        train_data,
+        train_y,
+        test_data,
+        test_y,
+        _,
+        excluded_mutation,
+        mut_num,
+        _,
+        _,
+        _,
+        _,
+    ) = ds.transforming_Braun_dataset(
+        config,
+        dimension_of_embedding_vectors=dimension_of_embedding_vectors,
+        cut_input_params=cut_input_params,
+        deletion_type=deletion_type,
     )
 
     if train_data is None:

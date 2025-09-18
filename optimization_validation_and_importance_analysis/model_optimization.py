@@ -1,6 +1,5 @@
 """."""
 
-# import copy
 import random
 import sys
 from pathlib import Path
@@ -134,8 +133,12 @@ def objective(trial, config):
     hotspots = trial.suggest_categorical(hotspots_key, [False, True])
     config[hotspots_key] = hotspots
 
-    train_data, train_y, test_data, test_y, _, _ = ds.transforming_Braun_dataset(
-        config, dimension_of_embedding_vectors=v_len, cut_input_params=cut_input_params
+    train_data, train_y, test_data, test_y, _, _, _, _, _, _, _ = (
+        ds.transforming_Braun_dataset(
+            config,
+            dimension_of_embedding_vectors=v_len,
+            cut_input_params=cut_input_params,
+        )
     )
     train_data, train_y = oversample_x_y(train_data, train_y)
 
@@ -200,10 +203,12 @@ if __name__ == "__main__":
     config[weights_key] = best_weights
     config[hotspots_key] = best_hotspots
 
-    train_data, train_y, test_data, test_y, _, _ = ds.transforming_Braun_dataset(
-        config,
-        dimension_of_embedding_vectors=best_v_len,
-        cut_input_params=cut_input_params,
+    train_data, train_y, test_data, test_y, _, _, _, _, _, _, _ = (
+        ds.transforming_Braun_dataset(
+            config,
+            dimension_of_embedding_vectors=best_v_len,
+            cut_input_params=cut_input_params,
+        )
     )
     _, y_pred, y_proba = svm_train_test(
         train_data, train_y, test_data, clf_kwargs=best_svm_params
