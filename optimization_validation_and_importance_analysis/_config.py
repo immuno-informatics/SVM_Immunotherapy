@@ -37,6 +37,7 @@ configurations = [
         "hotspots": True,
         "weights": {"MT": 0.6, "CF": 0.2},
         "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
+        # "validation_contig_file": "../data/braun_mutations_alternative_scoring_narrow_broad.tsv",
     },
     {
         "plot_label": "Peptide level",
@@ -73,6 +74,7 @@ configurations = [
         "hotspots": True,
         "weights": {"MT": 0.8, "CF": 0.6},
         "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
+        # "validation_contig_file": "../data/braun_mutations_alternative_scoring_narrow_broad.tsv",
     },
     {
         "plot_label": "Contig level",
@@ -107,6 +109,7 @@ configurations = [
         "hotspots": False,
         "weights": {"MT": 0.7, "CF": 0.2},
         "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_contigs.tsv",
+        # "validation_contig_file": "../data/Michal_combined_set_14_02_2025.tsv",
     },
     {
         "plot_label": "Scaffold level",
@@ -143,5 +146,6 @@ configurations = [
         "hotspots": True,
         "weights": {"MT": 0.9, "CF": 0.6},
         "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_scaffolds10.tsv",
+        # "validation_contig_file": "../data/Braun_hg38_epscaff10_w_score_2025.tsv",
     },
 ]

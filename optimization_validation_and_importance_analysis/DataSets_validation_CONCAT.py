@@ -1,5 +1,5 @@
 import os
-# import random
+import random
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import Normalizer
@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore", message=r"Passing", category=FutureWarning)
 warnings.filterwarnings("ignore", message=r"Passing", category=UserWarning)
 
 
-def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension_of_embedding_vectors, patients, hotspots, random_contigs, contig_file=False, to_remove=None, deletion_type=None, validation_contig_file=False, validation_patients=None):
+def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension_of_embedding_vectors, patients, hotspots, random_contigs, contig_file=False, to_remove=None, deletion_type=None, validation_contig_file=False):
     if contig_file:
         data = pd.read_csv(contig_file, sep="\t", low_memory=False)
     else:
@@ -22,18 +22,22 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
 
     # LOADING VALIDATION
 
-    validation_augmented_data = None
+    # validation_augmented_data = None
 
-    if validation_patients is not None:
+    if validation_contig_file:
         validation_data = pd.read_csv(validation_contig_file, sep="\t", low_memory=False)
 
-        # Fixing lack of `contig` colum
+        # Fixing lack of 'contig' colum
+        if "contig" in validation_data.columns:
+            raise KeyError("'contig' column is present in validation mutation data (in this state it shouldn't)")
         if "Unique_peptides_narrow" in validation_data.columns:
             validation_data["contig"] = validation_data["Unique_peptides_narrow"]
         elif "unique_peptides" in validation_data.columns:
             validation_data["contig"] = validation_data["unique_peptides"]
         else:
-            raise KeyError("No proper 'contig' column in validation mutation data")
+            raise KeyError("No proper 'contig'-like column in validation mutation data")
+
+        data = pd.concat([data, validation_data], join="inner", ignore_index=True)
 
     # LOADING VALIDATION
 
@@ -52,15 +56,15 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
     if hotspots:
         data = data.loc[data["contig"].notna()]
         # VALIDATION
-        if validation_patients is not None:
-            validation_data = validation_data.loc[validation_data["contig"].notna()]
+        # if validation_patients is not None:
+        #     validation_data = validation_data.loc[validation_data["contig"].notna()]
         # VALIDATION
 
     variation_keys = ["Chromosome", "Start_position", "End_position"]
     out = data[variation_keys + contig_values_to_experiment_with].value_counts()
     # VALIDATION
-    if validation_patients is not None:
-        validation_out = validation_data[variation_keys + contig_values_to_experiment_with].value_counts()
+    # if validation_patients is not None:
+    #     validation_out = validation_data[variation_keys + contig_values_to_experiment_with].value_counts()
     # VALIDATION
 
     # TAKE ALL MUTATIONS
@@ -68,14 +72,14 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
     out = out.loc[out > 0]
     # TAKE ALL MUTATIONS
     # VALIDATION
-    if validation_patients is not None:
-        validation_out = validation_out.loc[validation_out > 0]
+    # if validation_patients is not None:
+    #     validation_out = validation_out.loc[validation_out > 0]
     # VALIDATION
 
     out = out.reset_index(name="Count")
     # VALIDATION
-    if validation_patients is not None:
-        validation_out = validation_out.reset_index(name="Count")
+    # if validation_patients is not None:
+    #     validation_out = validation_out.reset_index(name="Count")
     # VALIDATION
 
     out_shape = out.shape[0]
@@ -84,7 +88,7 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
         try:
             removed = out.iloc[[to_remove]]
         except IndexError:
-            return None, None, out_shape, None
+            return None, None, out_shape
         # OMG
         out = out.drop([to_remove])
 
@@ -100,15 +104,15 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
         embedding_vectors = pd.DataFrame(embedding_vector_matrix)
         embedding_vector_matrices[contig_value_to_experiment_with] = embedding_vectors
     # VALIDATION
-    if validation_patients is not None:
-        np.random.seed(100)
-        validation_embedding_vector_matrices = {}
-        for contig_value_to_experiment_with in contig_values_to_experiment_with:
-            validation_embedding_vector_matrix = np.empty((len(validation_out), dimension_of_embedding_vectors))
-            for i in range(len(validation_out)):
-                validation_embedding_vector_matrix[i] = np.random.normal(0, 1. / np.sqrt(dimension_of_embedding_vectors), dimension_of_embedding_vectors)
-            validation_embedding_vectors = pd.DataFrame(validation_embedding_vector_matrix)
-            validation_embedding_vector_matrices[contig_value_to_experiment_with] = validation_embedding_vectors
+    # if validation_patients is not None:
+    #     np.random.seed(100)
+    #     validation_embedding_vector_matrices = {}
+    #     for contig_value_to_experiment_with in contig_values_to_experiment_with:
+    #         validation_embedding_vector_matrix = np.empty((len(validation_out), dimension_of_embedding_vectors))
+    #         for i in range(len(validation_out)):
+    #             validation_embedding_vector_matrix[i] = np.random.normal(0, 1. / np.sqrt(dimension_of_embedding_vectors), dimension_of_embedding_vectors)
+    #         validation_embedding_vectors = pd.DataFrame(validation_embedding_vector_matrix)
+    #         validation_embedding_vector_matrices[contig_value_to_experiment_with] = validation_embedding_vectors
     # VALIDATION
 
     zero_matrix = np.zeros((len(out), dimension_of_embedding_vectors))
@@ -116,11 +120,11 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
     mut_wh_emb_vs = pd.concat([out, embedding_vectors], axis=1)
     mut_wh_emb_vs = mut_wh_emb_vs.drop('Count', axis=1)
     # VALIDATION
-    if validation_patients is not None:
-        validation_zero_matrix = np.zeros((len(validation_out), dimension_of_embedding_vectors))
-        validation_embedding_vectors = pd.DataFrame(validation_zero_matrix)
-        validation_mut_wh_emb_vs = pd.concat([validation_out, validation_embedding_vectors], axis=1)
-        validation_mut_wh_emb_vs = validation_mut_wh_emb_vs.drop('Count', axis=1)
+    # if validation_patients is not None:
+    #     validation_zero_matrix = np.zeros((len(validation_out), dimension_of_embedding_vectors))
+    #     validation_embedding_vectors = pd.DataFrame(validation_zero_matrix)
+    #     validation_mut_wh_emb_vs = pd.concat([validation_out, validation_embedding_vectors], axis=1)
+    #     validation_mut_wh_emb_vs = validation_mut_wh_emb_vs.drop('Count', axis=1)
     # VALIDATION
 
 
@@ -128,8 +132,8 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
     if contig_values_to_experiment_with == ["NO_VALUE"]:
         mut_wh_emb_vs[embedding_vectors.columns] = embedding_vector_matrices["NO_VALUE"][embedding_vectors.columns]
         # VALIDATION
-        if validation_patients is not None:
-            validation_mut_wh_emb_vs[validation_embedding_vectors.columns] = validation_embedding_vector_matrices["NO_VALUE"][validation_embedding_vectors.columns]
+        # if validation_patients is not None:
+        #     validation_mut_wh_emb_vs[validation_embedding_vectors.columns] = validation_embedding_vector_matrices["NO_VALUE"][validation_embedding_vectors.columns]
         # VALIDATION
     else:
         scaler = MinMaxScaler()
@@ -138,36 +142,36 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
         for cv in contig_values_to_experiment_with:
             mut_wh_emb_vs[embedding_vectors.columns] = mut_wh_emb_vs[embedding_vectors.columns] + embedding_vector_matrices[cv][embedding_vectors.columns].multiply(np.sqrt(np.sqrt(mut_wh_emb_vs[cv])), axis=0)
         # VALIDATION
-        if validation_patients is not None:
-            validation_mut_wh_emb_vs[contig_values_to_experiment_with] = scaler.transform(validation_mut_wh_emb_vs[contig_values_to_experiment_with]) + 1
-            for cv in contig_values_to_experiment_with:
-                validation_mut_wh_emb_vs[validation_embedding_vectors.columns] = validation_mut_wh_emb_vs[validation_embedding_vectors.columns] + validation_embedding_vector_matrices[cv][validation_embedding_vectors.columns].multiply(np.sqrt(np.sqrt(validation_mut_wh_emb_vs[cv])), axis=0)
+        # if validation_patients is not None:
+        #     validation_mut_wh_emb_vs[contig_values_to_experiment_with] = scaler.transform(validation_mut_wh_emb_vs[contig_values_to_experiment_with]) + 1
+        #     for cv in contig_values_to_experiment_with:
+        #         validation_mut_wh_emb_vs[validation_embedding_vectors.columns] = validation_mut_wh_emb_vs[validation_embedding_vectors.columns] + validation_embedding_vector_matrices[cv][validation_embedding_vectors.columns].multiply(np.sqrt(np.sqrt(validation_mut_wh_emb_vs[cv])), axis=0)
         # VALIDATION
 
-    augmented_data = pd.merge(data, mut_wh_emb_vs, on = variation_keys)
+    augmented_data = pd.merge(data, mut_wh_emb_vs, on=variation_keys)
     # #print(embedding_vectors.columns)
     augmented_data = augmented_data[["SUBJID"] + [x for x in embedding_vectors.columns]]
     augmented_data = augmented_data.groupby(["SUBJID"]).sum()
     # VALIDATION
-    if validation_patients is not None:
-        validation_augmented_data = pd.merge(validation_data, validation_mut_wh_emb_vs, on = variation_keys)
-        validation_augmented_data = validation_augmented_data[["SUBJID"] + [x for x in validation_embedding_vectors.columns]]
-        validation_augmented_data = validation_augmented_data.groupby(["SUBJID"]).sum()
+    # if validation_patients is not None:
+    #     validation_augmented_data = pd.merge(validation_data, validation_mut_wh_emb_vs, on = variation_keys)
+    #     validation_augmented_data = validation_augmented_data[["SUBJID"] + [x for x in validation_embedding_vectors.columns]]
+    #     validation_augmented_data = validation_augmented_data.groupby(["SUBJID"]).sum()
     # VALIDATION
 
     norm = Normalizer()
     augmented_data[embedding_vectors.columns] = norm.fit_transform(augmented_data[embedding_vectors.columns])
     # VALIDATION
-    if validation_patients is not None:
-        validation_augmented_data[validation_embedding_vectors.columns] = norm.fit_transform(validation_augmented_data[validation_embedding_vectors.columns])
+    # if validation_patients is not None:
+    #     validation_augmented_data[validation_embedding_vectors.columns] = norm.fit_transform(validation_augmented_data[validation_embedding_vectors.columns])
     # VALIDATION
 
     augmented_data[embedding_vectors.columns] = len(contig_values_to_experiment_with) * augmented_data[embedding_vectors.columns]
     augmented_data = pd.merge(patients, augmented_data, on=["SUBJID"])
     # VALIDATION
-    if validation_patients is not None:
-        validation_augmented_data[validation_embedding_vectors.columns] = len(contig_values_to_experiment_with) * validation_augmented_data[validation_embedding_vectors.columns]
-        validation_augmented_data = pd.merge(validation_patients, validation_augmented_data, on=["SUBJID"])
+    # if validation_patients is not None:
+    #     validation_augmented_data[validation_embedding_vectors.columns] = len(contig_values_to_experiment_with) * validation_augmented_data[validation_embedding_vectors.columns]
+    #     validation_augmented_data = pd.merge(validation_patients, validation_augmented_data, on=["SUBJID"])
     # VALIDATION
 
     new_data = pd.merge(patients, augmented_data, on=["SUBJID"], how="outer")
@@ -178,13 +182,13 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
         missing_patient_matrix[i] = np.random.normal(0, 1. / np.sqrt(dimension_of_embedding_vectors),
                                                      dimension_of_embedding_vectors)
     # VALIDATION
-    if validation_patients is not None:
-        validation_new_data = pd.merge(validation_patients, validation_augmented_data, on=["SUBJID"], how="outer")
-        validation_new_out = validation_new_data.loc[validation_new_data[0].isnull()]
-        validation_new_out = validation_new_out["SUBJID"].to_frame().reset_index()
-        validation_missing_patient_matrix = np.empty((len(validation_new_out), dimension_of_embedding_vectors))
-        for i in range(len(validation_new_out)):
-            validation_missing_patient_matrix[i] = np.random.normal(0, 1. / np.sqrt(dimension_of_embedding_vectors), dimension_of_embedding_vectors)
+    # if validation_patients is not None:
+    #     validation_new_data = pd.merge(validation_patients, validation_augmented_data, on=["SUBJID"], how="outer")
+    #     validation_new_out = validation_new_data.loc[validation_new_data[0].isnull()]
+    #     validation_new_out = validation_new_out["SUBJID"].to_frame().reset_index()
+    #     validation_missing_patient_matrix = np.empty((len(validation_new_out), dimension_of_embedding_vectors))
+    #     for i in range(len(validation_new_out)):
+    #         validation_missing_patient_matrix[i] = np.random.normal(0, 1. / np.sqrt(dimension_of_embedding_vectors), dimension_of_embedding_vectors)
     # VALIDATION
 
     missing_patient_matrix_df = pd.DataFrame(missing_patient_matrix)
@@ -197,19 +201,19 @@ def mutation_vector_base_per_patient(contig_values_to_experiment_with, dimension
     #
     augmented_data.rename(columns=replac, inplace=True)
     # VALIDATION
-    if validation_patients is not None:
-        validation_missing_patient_matrix_df = pd.DataFrame(validation_missing_patient_matrix)
-        validation_missing_patient_df = pd.concat([validation_new_out, validation_missing_patient_matrix_df], axis=1)
-        validation_missing_patient_df = validation_missing_patient_df.drop("index", axis=1)
-        #
-        validation_augmented_data = pd.concat([validation_augmented_data, validation_missing_patient_df], axis=0)
-        # Trick to avoid minmax normalization of prepare_training
-        validation_replac = {i: "MT_" + str(i) + "###" for i in validation_embedding_vectors.columns}
-        #
-        validation_augmented_data.rename(columns=validation_replac, inplace=True)
+    # if validation_patients is not None:
+    #     validation_missing_patient_matrix_df = pd.DataFrame(validation_missing_patient_matrix)
+    #     validation_missing_patient_df = pd.concat([validation_new_out, validation_missing_patient_matrix_df], axis=1)
+    #     validation_missing_patient_df = validation_missing_patient_df.drop("index", axis=1)
+    #     #
+    #     validation_augmented_data = pd.concat([validation_augmented_data, validation_missing_patient_df], axis=0)
+    #     # Trick to avoid minmax normalization of prepare_training
+    #     validation_replac = {i: "MT_" + str(i) + "###" for i in validation_embedding_vectors.columns}
+    #     #
+    #     validation_augmented_data.rename(columns=validation_replac, inplace=True)
     # VALIDATION
 
-    return augmented_data, removed, out_shape, validation_augmented_data
+    return augmented_data, removed, out_shape#, validation_augmented_data
 
 
 def param_check(params, name):
@@ -230,6 +234,7 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     # LOADING VALIDATION AND ADJUSTING FOR THE LIMITED (CUT) FEATURES VERSION
 
     validation_features = None
+    new_data_validation = None
     validation_classification_labels = None
     validation_pfs = None
 
@@ -241,25 +246,33 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         # if not all([c in cut_cols for c in validation_features.columns]):
         #     NotImplementedError("Validation clinical features file has extra columns, for which it was not programmed to work (yet)")
 
-        # #! Dropping NaNs (?)
-        # validation_features = validation_features.dropna()
-        # #
+        #! Dropping NaNs (?)
+        validation_features = validation_features.dropna()
+        #
 
-        # #! Rounding age (?)
-        # validation_features['Age'] = validation_features['Age'].round()
-        # #
+        #! Rounding age (?)
+        validation_features['Age'] = validation_features['Age'].round()
+        #
 
-        # validation_features['Sex'] = validation_features['Sex'].str.lower()
+        validation_features['Sex'] = validation_features['Sex'].str.lower()
 
         # # Making sure column order is ok, in case
         # validation_features = validation_features[cut_cols]
 
-        # #! Adding dummy columns (?)
-        # validation_dummy_cols = list(set(new_data.columns) - set(validation_features.columns))
+        #! Adding dummy columns (?)
+        validation_dummy_cols = list(set(new_data.columns) - set(validation_features.columns))
         vf_len = validation_features.shape[0]
-        # for d_c in validation_dummy_cols:
-        #     u_org_vals = new_data[d_c].unique()
-        #     validation_features[d_c] = random.choices(u_org_vals, k=vf_len)
+        for d_c in validation_dummy_cols:
+            u_org_vals = new_data[d_c].unique()
+            validation_features[d_c] = random.choices(u_org_vals, k=vf_len)
+        validation_features["TrainTestStatus"] = ["VAL"] * vf_len
+
+        new_data = pd.concat([new_data, validation_features], ignore_index=True)
+
+        # A
+        # print(new_data)
+        # print(validation_features)
+        # print(pd.concat([new_data, validation_features], ignore_index=True))
 
     # LOADING VALIDATION AND ADJUSTING FOR THE LIMITED (CUT) FEATURES VERSION
 
@@ -267,8 +280,8 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     new_data = new_data.drop(['ST_CD8_IF_ID', 'ST_MAF_Normal_ID', 'ST_MAF_Tumor_ID', 'ST_RNA_ID', 'ST_CNV_ID'], axis=1)
     new_data = new_data.drop(['Number_of_Prior_Therapies'], axis=1)
     # VALIDATION
-    if validation_features_file is not None:
-        validation_features = validation_features.drop(['ST_CD8_IF_ID', 'ST_MAF_Normal_ID', 'ST_MAF_Tumor_ID', 'ST_RNA_ID', 'ST_CNV_ID', 'Number_of_Prior_Therapies'], axis=1)
+    # if validation_features_file is not None:
+    #     validation_features = validation_features.drop(['ST_CD8_IF_ID', 'ST_MAF_Normal_ID', 'ST_MAF_Tumor_ID', 'ST_RNA_ID', 'ST_CNV_ID', 'Number_of_Prior_Therapies'], axis=1)
     # VALIDATION
 
     # if param_check(params, "damien_split"):
@@ -281,23 +294,35 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     # SETTING TARGET
     new_data["Outcome"] = new_data["PFS"].map(lambda x: 1 if x > 6 else -1)
     # VALIDATION
-    if validation_features_file is not None:
-        validation_features["Outcome"] = validation_features["PFS"].map(lambda x: 1 if x > 6 else -1)
+    # if validation_features_file is not None:
+    #     validation_features["Outcome"] = validation_features["PFS"].map(lambda x: 1 if x > 6 else -1)
     # VALIDATION
 
-    new_data["TRAIN"] = new_data["TrainTestStatus"].map(lambda x: "TRAIN" if x == "Train" else "TEST")
+    # VALIDATION
+    # new_data["TRAIN"] = new_data["TrainTestStatus"].map(lambda x: "TRAIN" if x == "Train" else "TEST")
+    def _clf_status(x):
+        if x == "Train":
+            return "TRAIN"
+        elif x == "Test":
+            return "TEST"
+        elif x == "VAL":
+            return "VAL"
+        else:
+            raise ValueError("Wrong 'TrainTestStatus'")
+    new_data["TRAIN"] = new_data["TrainTestStatus"].map(_clf_status)
+    # VALIDATION
     new_data = new_data.drop(['TrainTestStatus'], axis=1)
     # VALIDATION
-    if validation_features_file is not None:
-        validation_features["TRAIN"] = ["NONE"] * vf_len
-        validation_features = validation_features.drop(['TrainTestStatus'], axis=1)
+    # if validation_features_file is not None:
+    #     validation_features["TRAIN"] = ["NONE"] * vf_len
+    #     validation_features = validation_features.drop(['TrainTestStatus'], axis=1)
     # VALIDATION
 
     if param_check(params, "PRIMARY_TUMOR_ONLY"):
         new_data = new_data.loc[new_data["TF_Tumor_Sample_Primary_or_Metastasis"] == "PRIMARY"]
         # VALIDATION
-        if validation_features_file is not None:
-            validation_features = validation_features.loc[validation_features["TF_Tumor_Sample_Primary_or_Metastasis"] == "PRIMARY"]
+        # if validation_features_file is not None:
+        #     validation_features = validation_features.loc[validation_features["TF_Tumor_Sample_Primary_or_Metastasis"] == "PRIMARY"]
         # VALIDATION
 
 
@@ -307,24 +332,30 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         "TF_ImmunoPhenotype",
         "TF_Days_from_TumorSample_Collection_and_Start_of_Trial_Therapy"], axis=1)
     # VALIDATION
-    if validation_features_file is not None:
-        validation_features = validation_features.drop([
-            #"TF_Tumor_Sample_Primary_or_Metastasis",
-            "TF_Site_of_Metastasis",
-            "TF_ImmunoPhenotype",
-            "TF_Days_from_TumorSample_Collection_and_Start_of_Trial_Therapy"], axis=1)
+    # if validation_features_file is not None:
+    #     validation_features = validation_features.drop([
+    #         #"TF_Tumor_Sample_Primary_or_Metastasis",
+    #         "TF_Site_of_Metastasis",
+    #         "TF_ImmunoPhenotype",
+    #         "TF_Days_from_TumorSample_Collection_and_Start_of_Trial_Therapy"], axis=1)
     # VALIDATION
 
     mut_num = None
+    validation_contig_file = False
     if param_check(params, "with_mutations"):
         patients = new_data["SUBJID"].drop_duplicates()
         # VALIDATION
-        validation_patients = None
-        if validation_features_file is not None:
-            validation_patients = validation_features["SUBJID"].drop_duplicates()
+        # validation_patients = None
+        # if validation_features_file is not None:
+        #     validation_patients = validation_features["SUBJID"].drop_duplicates()
         # VALIDATION
 
-        mutations, removed, mut_num, validation_mutations = mutation_vector_base_per_patient(param_check(params, "HS_features"), dimension_of_embedding_vectors, patients, param_check(params, "hotspots"),param_check(params, "random_contigs"), contig_file=param_check(params, "contig_file"),to_remove = param_check(params, "exclude_mutation"), deletion_type=deletion_type, validation_contig_file=param_check(params, "validation_contig_file"), validation_patients=validation_patients)
+        # VALIDATION
+        if validation_features_file is not None:
+            validation_contig_file = param_check(params, "validation_contig_file")
+        # VALIDATION
+
+        mutations, removed, mut_num = mutation_vector_base_per_patient(param_check(params, "HS_features"), dimension_of_embedding_vectors, patients, param_check(params, "hotspots"),param_check(params, "random_contigs"), contig_file=param_check(params, "contig_file"),to_remove=param_check(params, "exclude_mutation"), deletion_type=deletion_type, validation_contig_file=validation_contig_file)#, validation_patients=validation_patients)
 
         # OMG
         if mutations is None:
@@ -333,12 +364,12 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
 
         new_data = pd.merge(new_data, mutations, on=["SUBJID"], how="outer")
         # VALIDATION
-        if validation_features_file is not None:
-            validation_features = pd.merge(validation_features, validation_mutations, on=["SUBJID"], how="outer")
+        # if validation_features_file is not None:
+        #     validation_features = pd.merge(validation_features, validation_mutations, on=["SUBJID"], how="outer")
         # VALIDATION
         # out = new_data.loc[new_data["0###"].isnull()]
 
-    # new_data = new_data.drop("SUBJID", axis=1)
+    new_data = new_data.drop("SUBJID", axis=1)
     # VALIDATION
     # if validation_features_file is not None:
     #     validation_features = validation_features.drop("SUBJID", axis=1)
@@ -349,9 +380,9 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     if "Unnamed: 0" in new_data:
         new_data = new_data.drop("Unnamed: 0", axis=1)
     # VALIDATION
-    if validation_features_file is not None:
-        if "Unnamed: 0" in validation_features:
-            validation_features = validation_features.drop("Unnamed: 0", axis=1)
+    # if validation_features_file is not None:
+    #     if "Unnamed: 0" in validation_features:
+    #         validation_features = validation_features.drop("Unnamed: 0", axis=1)
     # VALIDATION
 
     new_data.rename(columns={"Received_Prior_Therapy":"CF_Received_Prior_Therapy",
@@ -359,8 +390,8 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
                              "Age":"CF_Age"
                              }, inplace=True)
     # VALIDATION
-    if validation_features_file is not None:
-        validation_features.rename(columns={"Received_Prior_Therapy":"CF_Received_Prior_Therapy", "Sex":"CF_Sex", "Age":"CF_Age"}, inplace=True)
+    # if validation_features_file is not None:
+    #     validation_features.rename(columns={"Received_Prior_Therapy":"CF_Received_Prior_Therapy", "Sex":"CF_Sex", "Age":"CF_Age"}, inplace=True)
     # VALIDATION
 
     columns_to_remove = [x for x in new_data.columns if not x.startswith("BP_") and not x.startswith("GE_") and not x.startswith("MT_")]
@@ -371,20 +402,13 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     columns_to_discretize = ['TF_Purity', 'TF_Ploidy', 'TF_TMB_Counts', 'TF_TM_Area', 'TF_TM_CD8', 'TF_TM_CD8_Density',
                              'TF_TC_Area', 'TF_TC_CD8', 'TF_TC_CD8_Density', 'TF_TM_TC_Ratio', 'TF_TM_CD8_PERCENT',
                              'TF_TC_CD8_PERCENT', 'CF_Age']
-    # VALIDATION
-    # if validation_features_file is not None:
-    #     validation_columns_to_remove = ['CF_Sex']
-    #     validation_columns_to_discretize = ['CF_Age']
-    # VALIDATION
-
 
     discretizer = KBinsDiscretizer(n_bins=10,encode='ordinal', strategy='quantile')
 
-
     new_data[columns_to_discretize] = discretizer.fit_transform(new_data[columns_to_discretize])
     # VALIDATION
-    if validation_features_file is not None:
-        validation_features[columns_to_discretize] = discretizer.transform(validation_features[columns_to_discretize])
+    # if validation_features_file is not None:
+    #     validation_features[columns_to_discretize] = discretizer.transform(validation_features[columns_to_discretize])
     # VALIDATION
 
     # >>>>>>>>>>>>>>>>>>>>>>>> VERY STUPID : DROPPING ARM
@@ -396,8 +420,8 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     #data_for_revert_exp = new_data[['TRAIN','Outcome','Arm']]
     new_data = pd.get_dummies(new_data, prefix_sep="###", dtype=float, columns=columns_to_remove+columns_to_discretize)
     # VALIDATION
-    if validation_features_file is not None:
-        validation_features = pd.get_dummies(validation_features, prefix_sep="###", dtype=float, columns=columns_to_remove+columns_to_discretize)
+    # if validation_features_file is not None:
+    #     validation_features = pd.get_dummies(validation_features, prefix_sep="###", dtype=float, columns=columns_to_remove+columns_to_discretize)
         # This is a fix only for this particular case -- there are no high enough values in 'Age'
         # validation_features.insert(validation_features.columns.get_loc("CF_Age###8.0")+1, "CF_Age###9.0", [0.0]*vf_len)
         #
@@ -424,9 +448,16 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     new_data_test = new_data_test.drop(['Benefit', 'ORR', 'PFS_CNSR', 'OS', 'OS_CNSR','PFS'], axis=1)
     # VALIDATION
     if validation_features_file is not None:
-        validation_classification_labels = validation_features['Outcome']
-        validation_pfs = validation_features['PFS']
-        validation_features = validation_features.drop(["TRAIN", "Outcome", 'Benefit', 'ORR', 'PFS_CNSR', 'OS', 'OS_CNSR','PFS'], axis=1)
+        new_data_validation = new_data.loc[new_data["TRAIN"] == "VAL"]
+        validation_classification_labels = new_data_validation['Outcome']
+        validation_pfs = new_data_validation['PFS']
+        new_data_validation = new_data_validation.drop(["TRAIN", "Outcome", 'Benefit', 'ORR', 'PFS_CNSR', 'OS', 'OS_CNSR','PFS'], axis=1)
+    # VALIDATION
+    # VALIDATION
+    # if validation_features_file is not None:
+    #     validation_classification_labels = validation_features['Outcome']
+    #     validation_pfs = validation_features['PFS']
+    #     validation_features = validation_features.drop(["TRAIN", "Outcome", 'Benefit', 'ORR', 'PFS_CNSR', 'OS', 'OS_CNSR','PFS'], axis=1)
     # VALIDATION
 
     #dim = 100
@@ -451,24 +482,30 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     scaler = MinMaxScaler()
     new_data_train[CF_columns] = scaler.fit_transform(new_data_train[CF_columns])
     new_data_test[CF_columns] = scaler.transform(new_data_test[CF_columns])
-    #print("MinMax Scaler done")
     # VALIDATION
     if validation_features_file is not None:
-        validation_CF_columns = [x for x in validation_features.columns if x.startswith("CF_")]
-        validation_features[validation_CF_columns] = scaler.transform(validation_features[validation_CF_columns])
+        new_data_validation[CF_columns] = scaler.transform(new_data_validation[CF_columns])
+    # VALIDATION
+    #print("MinMax Scaler done")
+    # VALIDATION
+    # if validation_features_file is not None:
+    #     validation_CF_columns = [x for x in validation_features.columns if x.startswith("CF_")]
+    #     validation_features[validation_CF_columns] = scaler.transform(validation_features[validation_CF_columns])
     # VALIDATION
 
     # COLUMNS FILTERING
     if cut_input_params:
-        id_validation = None
-        id_train = new_data_train["SUBJID"]
         ok_columns = ["CF_Sex", "CF_Age", "MT_"]
         new_data_train = new_data_train[[c for c in new_data_train.columns if c.startswith(tuple(ok_columns))]]
         new_data_test = new_data_test[[c for c in new_data_test.columns if c.startswith(tuple(ok_columns))]]
         # VALIDATION
         if validation_features_file is not None:
-            id_validation = validation_features["SUBJID"]
-            validation_features = validation_features[[c for c in validation_features.columns if c.startswith(tuple(ok_columns))]]
+            new_data_validation = new_data_validation[[c for c in new_data_validation.columns if c.startswith(tuple(ok_columns))]]
+        # VALIDATION
+        # VALIDATION
+        # if validation_features_file is not None:
+        #     id_validation = validation_features["SUBJID"]
+        #     validation_features = validation_features[[c for c in validation_features.columns if c.startswith(tuple(ok_columns))]]
         # VALIDATION
     # COLUMNS FILTERING
 
@@ -486,13 +523,13 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         Arm_columns = [x for x in new_data_train.columns if x.startswith("Arm")]
         # ARM WEIGHTS
         # VALIDATION
-        if validation_features_file is not None:
+        # if validation_features_file is not None:
             # validation_TF_columns = [x for x in validation_features.columns if x.startswith("TF_")]
             # validation_GE_columns = [x for x in validation_features.columns if x.startswith("GE_")]
             # validation_BP_columns = [x for x in validation_features.columns if x.startswith("BP_")]
-            validation_MT_columns = [x for x in validation_features.columns if x.startswith("MT_")]
+            # validation_MT_columns = [x for x in validation_features.columns if x.startswith("MT_")]
             # validation_PS_columns = [x for x in validation_features.columns if x.startswith("PS_")]
-            validation_CF_columns = [x for x in validation_features.columns if x.startswith("CF_")]
+            # validation_CF_columns = [x for x in validation_features.columns if x.startswith("CF_")]
             # validation_Arm_columns = [x for x in validation_features.columns if x.startswith("Arm")]
         # VALIDATION
         if TF_columns:
@@ -513,8 +550,12 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
             new_data_train[MT_columns] = weights["MT"]*scaler.fit_transform(new_data_train[MT_columns])  # \/
             new_data_test[MT_columns] = weights["MT"]*scaler.transform(new_data_test[MT_columns])
             # VALIDATION
-            if validation_features_file is not None and validation_MT_columns:
-                validation_features[validation_MT_columns] = weights["MT"]*scaler.transform(validation_features[validation_MT_columns])
+            if validation_features_file is not None:
+                new_data_validation[MT_columns] = weights["MT"]*scaler.transform(new_data_validation[MT_columns])
+            # VALIDATION
+            # VALIDATION
+            # if validation_features_file is not None and validation_MT_columns:
+            #     validation_features[validation_MT_columns] = weights["MT"]*scaler.transform(validation_features[validation_MT_columns])
             # VALIDATION
         if PS_columns:
             new_data_train[PS_columns] = weights["PS"]*scaler.fit_transform(new_data_train[PS_columns])
@@ -523,8 +564,12 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
             new_data_train[CF_columns] = weights["CF"]*scaler.fit_transform(new_data_train[CF_columns])
             new_data_test[CF_columns] = weights["CF"]*scaler.transform(new_data_test[CF_columns])
             # VALIDATION
-            if validation_features_file is not None and validation_CF_columns:
-                validation_features[validation_CF_columns] = weights["CF"]*scaler.transform(validation_features[validation_CF_columns])
+            if validation_features_file is not None:
+                new_data_validation[CF_columns] = weights["CF"]*scaler.transform(new_data_validation[CF_columns])
+            # VALIDATION
+            # VALIDATION
+            # if validation_features_file is not None and validation_CF_columns:
+            #     validation_features[validation_CF_columns] = weights["CF"]*scaler.transform(validation_features[validation_CF_columns])
             # VALIDATION
 
     norm = Normalizer()
@@ -532,8 +577,12 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     new_data_test[new_data_test.columns] = norm.fit_transform(new_data_test[new_data_test.columns])
     # VALIDATION
     if validation_features_file is not None:
-        validation_features[validation_features.columns] = norm.fit_transform(validation_features[validation_features.columns])
+        new_data_validation[new_data_validation.columns] = norm.fit_transform(new_data_validation[new_data_validation.columns])
+    # VALIDATION
+    # VALIDATION
+    # if validation_features_file is not None:
+    #     validation_features[validation_features.columns] = norm.fit_transform(validation_features[validation_features.columns])
     # VALIDATION
     #print("Normalizer done")
 
-    return new_data_train, train_classification_labels, new_data_test, test_classification_labels, test_pfs, removed if "removed" in locals() else None, mut_num, test_pfs_cnsr, validation_features, validation_classification_labels, validation_pfs, id_train, id_validation
+    return new_data_train, train_classification_labels, new_data_test, test_classification_labels, test_pfs, removed if "removed" in locals() else None, mut_num, test_pfs_cnsr, new_data_validation, validation_classification_labels, validation_pfs

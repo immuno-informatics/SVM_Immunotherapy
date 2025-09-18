@@ -1,32 +1,32 @@
 Baseline:
-  Accuracy: 0.894
-  Precision: 0.832
-  Recall: 0.870
-  F1 Score: 0.851
-  ROC AUC: 0.956
-    _MEAN_: 0.881
-    BA: 0.888
+  Accuracy: 0.579
+  Precision: 0.368
+  Recall: 0.368
+  F1 Score: 0.368
+  ROC AUC: 0.633
+    _MEAN_: 0.463
+    BA: 0.526
 Peptide level:
-  Accuracy: 0.862
-  Precision: 0.816
-  Recall: 0.778
-  F1 Score: 0.796
-  ROC AUC: 0.914
-    _MEAN_: 0.833
-    BA: 0.842
+  Accuracy: 0.649
+  Precision: 0.467
+  Recall: 0.368
+  F1 Score: 0.412
+  ROC AUC: 0.568
+    _MEAN_: 0.493
+    BA: 0.579
 Contig level:
-  Accuracy: 0.904
-  Precision: 0.875
-  Recall: 0.843
-  F1 Score: 0.858
-  ROC AUC: 0.945
-    _MEAN_: 0.885
-    BA: 0.889
+  Accuracy: 0.509
+  Precision: 0.091
+  Recall: 0.053
+  F1 Score: 0.067
+  ROC AUC: 0.417
+    _MEAN_: 0.227
+    BA: 0.395
 Scaffold level:
-  Accuracy: 0.904
-  Precision: 0.836
-  Recall: 0.898
-  F1 Score: 0.866
-  ROC AUC: 0.967
-    _MEAN_: 0.894
-    BA: 0.902
+  Accuracy: 0.614
+  Precision: 0.286
+  Recall: 0.105
+  F1 Score: 0.154
+  ROC AUC: 0.639
+    _MEAN_: 0.359
+    BA: 0.487
