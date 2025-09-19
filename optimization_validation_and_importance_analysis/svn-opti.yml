@@ -5,11 +5,13 @@ channels:
 dependencies:
   - ipykernel=6.29.5
   - ipython=9.0.2
+  - ipywidgets=8.1.7
   - jupyter_client=8.6.3
   - jupyter_core=5.7.2
   - mysqlclient=2.2.7
   - numpy=2.2.3
   - optuna=4.2.1
+  - optuna-integration=4.4.0
   - pandas=2.2.3
   - pip=25.0.1
   - polars=0.20.31
