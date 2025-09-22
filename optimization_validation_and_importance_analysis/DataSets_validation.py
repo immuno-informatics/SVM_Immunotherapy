@@ -241,7 +241,7 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         cut_cols = ['SUBJID', 'PFS', 'Sex', 'Age']
 
         if not all([c in cut_cols for c in validation_features.columns]):
-            NotImplementedError("Validation clinical features file has extra columns, for which it was not programmed to work (yet)")
+            raise NotImplementedError("Validation clinical features file has extra columns, for which it was not programmed to work (yet)")
 
         #! Dropping NaNs (?)
         validation_features = validation_features.dropna()
