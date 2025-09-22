@@ -47,6 +47,9 @@ results_dir.mkdir(parents=True, exist_ok=True)
 
 # Config
 
+# Set `True` if you want to use the updated input data schema
+new_full_data = True
+
 # Set `True` if you want to use only age, gender, and mutation data:
 cut_input_params = False
 
@@ -73,6 +76,11 @@ weights_key = "weights"
 hotspots_key = "hotspots"
 if cut_input_params:
     weights_to_opti = frozenset({"CF", "MT"})
+elif new_full_data:
+    weights_to_opti = frozenset({"PS", "TF", "CF", "BP", "MT", "GE", "Arm"})
+    raise NotImplementedError(
+        f"Double-check if weights to optimize are right (`new_full_data={new_full_data}`)"
+    )
 else:
     weights_to_opti = frozenset({"PS", "TF", "CF", "BP", "MT", "GE", "Arm"})
 
@@ -146,8 +154,8 @@ def objective(trial, config):
     x_full = np.concatenate((train_data, test_data))
     y_full = np.concatenate((train_y, test_y))
     train_indices = [-1] * len(train_data)
-    validation_indices = [0] * len(test_data)
-    split = np.array(train_indices + validation_indices)
+    test_indices = [0] * len(test_data)
+    split = np.array(train_indices + test_indices)
     ps = PredefinedSplit(split)
 
     scores = cross_val_score(

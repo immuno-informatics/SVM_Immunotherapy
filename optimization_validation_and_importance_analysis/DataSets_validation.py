@@ -221,7 +221,7 @@ def param_check(params, name):
         return False
 
 
-def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_input_params=False, deletion_type=None, validation_features_file=None):
+def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_input_params=False, deletion_type=None, validation_features_file=None, new_full_data=False):
     if os.path.exists('../data/Braun_2020_ALL_UNIQUE_final_reduced.csv') and not param_check(params, "recompute"):
         ##print("Loading reduced dataset")
         new_data = pd.read_csv('../data/Braun_2020_ALL_UNIQUE_final_reduced.csv')
@@ -424,30 +424,6 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     #new_data_train, new_data_test = reducing_training_and_testing(new_data_train, new_data_test, "MT_", dim)
     ##print("... done")
 
-    TF_columns = [x for x in new_data.columns if x.startswith("TF_")]
-    # MIN MAX Scaler
-    scaler = MinMaxScaler()
-    new_data_train[TF_columns] = scaler.fit_transform(new_data_train[TF_columns])
-    new_data_test[TF_columns] = scaler.transform(new_data_test[TF_columns])
-    #print("MinMax Scaler done")
-
-    norm = Normalizer()
-    new_data_train[TF_columns] = norm.fit_transform(new_data_train[TF_columns])
-    new_data_test[TF_columns] = norm.fit_transform(new_data_test[TF_columns])
-    #print("Normalizer done")
-
-    CF_columns = [x for x in new_data.columns if x.startswith("CF_")]
-    # MIN MAX Scaler
-    scaler = MinMaxScaler()
-    new_data_train[CF_columns] = scaler.fit_transform(new_data_train[CF_columns])
-    new_data_test[CF_columns] = scaler.transform(new_data_test[CF_columns])
-    #print("MinMax Scaler done")
-    # VALIDATION
-    if validation_features_file is not None:
-        validation_CF_columns = [x for x in validation_features.columns if x.startswith("CF_")]
-        validation_features[validation_CF_columns] = scaler.transform(validation_features[validation_CF_columns])
-    # VALIDATION
-
     # COLUMNS FILTERING
     if cut_input_params:
         ok_columns = ["CF_Sex", "CF_Age", "MT_"]
@@ -458,6 +434,39 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
             validation_features = validation_features[[c for c in validation_features.columns if c.startswith(tuple(ok_columns))]]
         # VALIDATION
     # COLUMNS FILTERING
+
+    TF_columns = [x for x in new_data.columns if x.startswith("TF_")]
+    if TF_columns:
+        # MIN MAX Scaler
+        scaler = MinMaxScaler()
+        new_data_train[TF_columns] = scaler.fit_transform(new_data_train[TF_columns])
+        new_data_test[TF_columns] = scaler.transform(new_data_test[TF_columns])
+        #print("MinMax Scaler done")
+
+        norm = Normalizer()
+        new_data_train[TF_columns] = norm.fit_transform(new_data_train[TF_columns])
+        new_data_test[TF_columns] = norm.fit_transform(new_data_test[TF_columns])
+        #print("Normalizer done")
+
+    CF_columns = [x for x in new_data.columns if x.startswith("CF_")]
+    if CF_columns:
+        # MIN MAX Scaler
+        scaler = MinMaxScaler()
+        new_data_train[CF_columns] = scaler.fit_transform(new_data_train[CF_columns])
+        new_data_test[CF_columns] = scaler.transform(new_data_test[CF_columns])
+        #print("MinMax Scaler done")
+        # VALIDATION
+        if validation_features_file is not None:
+            validation_features[CF_columns] = scaler.transform(validation_features[CF_columns])
+        # VALIDATION
+
+    # DOUBLE-CHECKING IF EVERYTHING'S FINE
+    if not all(new_data_train.columns == new_data_test.columns):
+        raise ValueError("Columns in `train` and `test` are not the same")
+    if validation_features_file is not None:
+        if not all(new_data_train.columns == validation_features.columns):
+            raise ValueError("Columns in `train` and `validation` are not the same")
+    # DOUBLE-CHECKING IF EVERYTHING'S FINE
 
     # Relative weights among groups of features
 
@@ -472,16 +481,6 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         # ARM WEIGHTS
         Arm_columns = [x for x in new_data_train.columns if x.startswith("Arm")]
         # ARM WEIGHTS
-        # VALIDATION
-        if validation_features_file is not None:
-            # validation_TF_columns = [x for x in validation_features.columns if x.startswith("TF_")]
-            # validation_GE_columns = [x for x in validation_features.columns if x.startswith("GE_")]
-            # validation_BP_columns = [x for x in validation_features.columns if x.startswith("BP_")]
-            validation_MT_columns = [x for x in validation_features.columns if x.startswith("MT_")]
-            # validation_PS_columns = [x for x in validation_features.columns if x.startswith("PS_")]
-            validation_CF_columns = [x for x in validation_features.columns if x.startswith("CF_")]
-            # validation_Arm_columns = [x for x in validation_features.columns if x.startswith("Arm")]
-        # VALIDATION
         if TF_columns:
             new_data_train[TF_columns] = weights["TF"]*scaler.fit_transform(new_data_train[TF_columns])
             new_data_test[TF_columns] = weights["TF"]*scaler.transform(new_data_test[TF_columns])
@@ -500,8 +499,8 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
             new_data_train[MT_columns] = weights["MT"]*scaler.fit_transform(new_data_train[MT_columns])  # \/
             new_data_test[MT_columns] = weights["MT"]*scaler.transform(new_data_test[MT_columns])
             # VALIDATION
-            if validation_features_file is not None and validation_MT_columns:
-                validation_features[validation_MT_columns] = weights["MT"]*scaler.transform(validation_features[validation_MT_columns])
+            if validation_features_file is not None:
+                validation_features[MT_columns] = weights["MT"]*scaler.transform(validation_features[MT_columns])
             # VALIDATION
         if PS_columns:
             new_data_train[PS_columns] = weights["PS"]*scaler.fit_transform(new_data_train[PS_columns])
@@ -510,8 +509,8 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
             new_data_train[CF_columns] = weights["CF"]*scaler.fit_transform(new_data_train[CF_columns])
             new_data_test[CF_columns] = weights["CF"]*scaler.transform(new_data_test[CF_columns])
             # VALIDATION
-            if validation_features_file is not None and validation_CF_columns:
-                validation_features[validation_CF_columns] = weights["CF"]*scaler.transform(validation_features[validation_CF_columns])
+            if validation_features_file is not None:
+                validation_features[CF_columns] = weights["CF"]*scaler.transform(validation_features[CF_columns])
             # VALIDATION
 
     norm = Normalizer()
