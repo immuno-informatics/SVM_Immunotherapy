@@ -51,16 +51,17 @@ results_dir.mkdir(parents=True, exist_ok=True)
 cut_input_params = False
 
 # Optuna configuration
-opt_n_trials = 25_000
+# opt_n_trials = 25_000
+opt_n_trials = 10
 opt_n_jobs = 1  # Results are unreproducible if > 1
 # Also, if > 1, there are some strange things going
 # on with the results vs. the evaluation at the end
 opt_max_stagnation_trials = 30_000
-opt_db_name = "svm-full-db.sqlite3"
+opt_db_name = "svm-new-db.sqlite3"
 #    Persistent storage (analyze with `optuna-dashboard`):
 opt_storage = f"sqlite:///{results_dir.joinpath(opt_db_name)}"
 #    Uncomment to disable persistent storage:
-# opt_storage = None
+opt_storage = None
 
 cv_n_jobs = 1
 cv_scoring = "balanced_accuracy"
@@ -161,7 +162,10 @@ if __name__ == "__main__":
         sys.exit("You must specify index of a model")
     m_idx = int(sys.argv[1])
 
-    config = cfg.configurations[m_idx]
+    try:
+        config = cfg.configurations[m_idx]
+    except IndexError:
+        raise IndexError(f"No model with index of `{m_idx}` in `_config.py`")
 
     model_label = config[label_key]
 
@@ -223,11 +227,13 @@ if __name__ == "__main__":
 
     print(
         f"\n{model_label}:\n"
-        f"  Best score: {best_score:.3f}\n"
-        f"  Best vector length: {best_v_len}\n"
-        f"  Best SVM parameters: {best_svm_params}\n"
-        f'  Best "hotspots": {best_hotspots}\n'
-        f"  Best weights: {best_weights}\n"
+        f"  Best score: {best_score:.3f}\n\n"
+        "  Optimized params:\n"
+        f'"mut_vec_len": {best_v_len},\n'
+        f'"clf_params": {best_svm_params},\n'
+        f'"hotspots": {best_hotspots},\n'
+        f'"weights": {best_weights},\n\n'
+        "  Scores:\n"
         f"    Accuracy: {acc:.3f}\n"
         f"    Precision: {prec:.3f}\n"
         f"    Recall: {rec:.3f}\n"
