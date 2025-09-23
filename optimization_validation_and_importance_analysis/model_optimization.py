@@ -53,6 +53,11 @@ new_full_data = True
 # Set `True` if you want to use only age, gender, and mutation data:
 cut_input_params = False
 
+# If `True`, optimize if filtering hotspots or not
+hotspots_opti = True
+# If `False`, set an override value
+hotspots_override = False
+
 # Optuna configuration
 opt_n_trials = 25_000
 opt_n_jobs = 1  # Results are unreproducible if > 1
@@ -135,8 +140,11 @@ def objective(trial, config):
     config[weights_key] = weights
 
     # Filtering hotspots or not optimization
-    hotspots = trial.suggest_categorical(hotspots_key, [False, True])
-    config[hotspots_key] = hotspots
+    if hotspots_opti:
+        hotspots = trial.suggest_categorical(hotspots_key, [False, True])
+        config[hotspots_key] = hotspots
+    else:
+        config[hotspots_key] = hotspots_override
 
     train_data, train_y, test_data, test_y, _, _, _, _, _, _, _ = (
         ds.transforming_Braun_dataset(
@@ -248,3 +256,5 @@ if __name__ == "__main__":
         f"      _MEAN_: {mean_s:.3f}\n"
         f"      BA: {ba:.3f}"
     )
+    if hotspots_opti:
+        print('\n"hotspots" optimized')
