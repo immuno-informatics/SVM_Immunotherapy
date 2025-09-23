@@ -64,7 +64,7 @@ opt_n_jobs = 1  # Results are unreproducible if > 1
 # Also, if > 1, there are some strange things going
 # on with the results vs. the evaluation at the end
 opt_max_stagnation_trials = 30_000
-opt_db_name = "svm-new-db.sqlite3"
+opt_db_name = "svm-opti-db-new.sqlite3"
 #    Persistent storage (analyze with `optuna-dashboard`):
 opt_storage = f"sqlite:///{results_dir.joinpath(opt_db_name)}"
 #    Uncomment to disable persistent storage:
@@ -194,6 +194,9 @@ if __name__ == "__main__":
         )
     )
 
+    if not hotspots_opti:
+        model_label += f"_hotspots_{hotspots_override}"
+
     study = optuna.create_study(
         study_name=f"{model_label}",
         direction="maximize",
@@ -215,7 +218,10 @@ if __name__ == "__main__":
     best_svm_params = study.best_params
     best_v_len = best_svm_params.pop(v_len_name)
     best_weights = {w: best_svm_params.pop(w) for w in weights_to_opti}
-    best_hotspots = best_svm_params.pop(hotspots_key)
+    if hotspots_opti:
+        best_hotspots = best_svm_params.pop(hotspots_key)
+    else:
+        best_hotspots = hotspots_override
 
     config[weights_key] = best_weights
     config[hotspots_key] = best_hotspots
@@ -256,5 +262,3 @@ if __name__ == "__main__":
         f"      _MEAN_: {mean_s:.3f}\n"
         f"      BA: {ba:.3f}"
     )
-    if hotspots_opti:
-        print('\n"hotspots" optimized')
