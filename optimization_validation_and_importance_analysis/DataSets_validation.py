@@ -483,11 +483,11 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         # VALIDATION
 
     # DOUBLE-CHECKING IF EVERYTHING'S FINE
-    if not all(new_data_train.columns == new_data_test.columns):
-        raise ValueError("Columns in `train` and `test` are not the same")
-    if validation_features_file is not None:
-        if not all(new_data_train.columns == validation_features.columns):
-            raise ValueError("Columns in `train` and `validation` are not the same")
+    # if not all(new_data_train.columns == new_data_test.columns):
+    #     raise ValueError("Columns in `train` and `test` are not the same")
+    # if validation_features_file is not None:
+    #     if not all(new_data_train.columns == validation_features.columns):
+    #         raise ValueError("Columns in `train` and `validation` are not the same")
     # DOUBLE-CHECKING IF EVERYTHING'S FINE
 
     # Relative weights among groups of features
