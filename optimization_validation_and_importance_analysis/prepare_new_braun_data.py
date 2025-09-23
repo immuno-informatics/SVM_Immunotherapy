@@ -13,20 +13,30 @@ from DataSets import reducing_training_and_testing  # noqa: E402
 # Config
 
 # Set `True` if you want to use the updated input data schema
-new_full_data = True
+new_full_data = False
 
 og_braun_data_file = "/data/teamgdansk/Braun_2020_ALL_UNIQUE_final.csv"
-reduced_braun_data_file = "../data/Braun_2020_ALL_UNIQUE_final_reduced_new.csv"
+reduced_braun_data_file = (
+    "../data/Braun_2020_ALL_UNIQUE_final_reduced_new_traintest.csv"
+)
 
 # Set to path if you want to switch `test` with `validation` data to process
+# validation_data_file = "../data/Braun_2020_ALL_UNIQUE_final_reduced_new_validation.csv"
 validation_data_file = None
 
 # Set `True` if you want PCA to train on both `train` and `test` subsets
-reduce_train_on_all = True
+reduce_train_on_all = False
 
 #
 
-og_braun_data = pd.read_csv(og_braun_data_file)
+og_braun_data = pd.read_csv(
+    og_braun_data_file, dtype={"TF_Site_of_Metastasis": "object"}
+)
+
+if new_full_data:
+    # ok_cols = og_braun_data.columns[:-50]
+    # og_braun_data = og_braun_data[ok_cols]
+    raise NotImplementedError("not yet")
 
 # FILLING nan with the Mode
 filler = og_braun_data.mode(axis=0, dropna=True).loc[0].fillna(0)
@@ -41,6 +51,7 @@ if validation_data_file is None:
         og_braun_data[og_braun_data["TrainTestStatus"] == "Test"].index
     ]
 else:
+    # new_data_test = validation data
     raise NotImplementedError("not yet")
 
 dim = 100
@@ -56,8 +67,13 @@ new_data_train, new_data_test = reducing_training_and_testing(
 )
 print("...done")
 
-new_data = pd.concat([new_data_train, new_data_test], ignore_index=True)
-# new_data.to_csv(reduced_braun_data_file, index=False)
+if validation_data_file is None:
+    new_data = pd.concat([new_data_train, new_data_test], ignore_index=True)
+    # new_data.to_csv(reduced_braun_data_file, index=False)
+    print("\nTURN ON FILE SAVING\n")
+else:
+    # new_data_test.to_csv(validation_data_file, index=False)
+    raise NotImplementedError("not yet")
 
 # TESTING
 

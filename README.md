@@ -16,6 +16,12 @@ conda env create -f svn-opti.yml
 
 >Remember to open each mentioned script and check its configuration, as there are several options how to run the models.
 
+## Prepare Model Input Data
+
+Run the `prepare_new_braun_data.py` script with specific configuration set up to produce input files with training and testing or validation data.
+
+**This script is unnecessary to run if there are already files with input data saved. Running this from scratch may influence the results.**
+
 ## Model Optimization
 
 The script `model_optimization.py` optimizes a selected model:
@@ -38,4 +44,4 @@ Use the `train_test_validation_scores.ipynb` notebook to train, test, and valida
 
 ## Accompanying Information
 
-Description of model methodology (in Supplementary file 3) and saved classifier models as pickled files are available in the accompanying supplementary data Zenodo repository: https://doi.org/10.5281/zenodo.14859003.
+Description of model methodology (in Supplementary file 3) and saved classifier models as pickled files are available in the accompanying supplementary data Zenodo repository: <https://doi.org/10.5281/zenodo.14859003>.
