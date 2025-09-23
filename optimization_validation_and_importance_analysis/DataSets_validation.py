@@ -222,12 +222,15 @@ def param_check(params, name):
 
 
 def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_input_params=False, deletion_type=None, validation_features_file=None, new_full_data=False):
-    if os.path.exists('../data/Braun_2020_ALL_UNIQUE_final_reduced.csv') and not param_check(params, "recompute"):
-        ##print("Loading reduced dataset")
-        new_data = pd.read_csv('../data/Braun_2020_ALL_UNIQUE_final_reduced.csv')
-        ##print("...done")
+    if not new_full_data:
+        if os.path.exists('../data/Braun_2020_ALL_UNIQUE_final_reduced.csv') and not param_check(params, "recompute"):
+            ##print("Loading reduced dataset")
+            new_data = pd.read_csv('../data/Braun_2020_ALL_UNIQUE_final_reduced.csv')
+            ##print("...done")
+        else:
+            raise NotImplementedError("Something's wrong, check if you have the data actually synced?")
     else:
-        raise NotImplementedError("Something's wrong, check if you have the data actually synced?")
+        new_data = pd.read_csv("../data/Braun_2020_ALL_UNIQUE_final_reduced_new_traintest.csv")
 
     # LOADING VALIDATION AND ADJUSTING FOR THE LIMITED (CUT) FEATURES VERSION
 
@@ -238,40 +241,38 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     if validation_features_file is not None:
         validation_features = pd.read_csv(validation_features_file)
 
-        cut_cols = ['SUBJID', 'PFS', 'Sex', 'Age']
-
-        if not all([c in cut_cols for c in validation_features.columns]):
-            raise NotImplementedError("Validation clinical features file has extra columns, for which it was not programmed to work (yet)")
-
         #! Dropping NaNs (?)
         validation_features = validation_features.dropna()
-        #
-
         #! Rounding age (?)
         validation_features['Age'] = validation_features['Age'].round()
-        #
-
         validation_features['Sex'] = validation_features['Sex'].str.lower()
 
-        # Making sure column order is ok, in case
-        validation_features = validation_features[cut_cols]
+        if not new_full_data:
+            cut_cols = ['SUBJID', 'PFS', 'Sex', 'Age']
 
-        #! Adding dummy columns (?)
-        validation_dummy_cols = list(set(new_data.columns) - set(validation_features.columns))
-        vf_len = validation_features.shape[0]
-        for d_c in validation_dummy_cols:
-            u_org_vals = new_data[d_c].unique()
-            validation_features[d_c] = random.choices(u_org_vals, k=vf_len)
+            if not all([c in cut_cols for c in validation_features.columns]):
+                raise NotImplementedError("Validation clinical features file has extra columns, for which it was not programmed to work (yet)")
+
+            # Making sure column order is ok, in case
+            validation_features = validation_features[cut_cols]
+
+            #! Adding dummy columns (?)
+            validation_dummy_cols = list(set(new_data.columns) - set(validation_features.columns))
+            vf_len = validation_features.shape[0]
+            for d_c in validation_dummy_cols:
+                u_org_vals = new_data[d_c].unique()
+                validation_features[d_c] = random.choices(u_org_vals, k=vf_len)
 
     # LOADING VALIDATION AND ADJUSTING FOR THE LIMITED (CUT) FEATURES VERSION
 
-    # Dropping useless features
-    new_data = new_data.drop(['ST_CD8_IF_ID', 'ST_MAF_Normal_ID', 'ST_MAF_Tumor_ID', 'ST_RNA_ID', 'ST_CNV_ID'], axis=1)
-    new_data = new_data.drop(['Number_of_Prior_Therapies'], axis=1)
-    # VALIDATION
-    if validation_features_file is not None:
-        validation_features = validation_features.drop(['ST_CD8_IF_ID', 'ST_MAF_Normal_ID', 'ST_MAF_Tumor_ID', 'ST_RNA_ID', 'ST_CNV_ID', 'Number_of_Prior_Therapies'], axis=1)
-    # VALIDATION
+    if not new_full_data:
+        # Dropping useless features
+        new_data = new_data.drop(['ST_CD8_IF_ID', 'ST_MAF_Normal_ID', 'ST_MAF_Tumor_ID', 'ST_RNA_ID', 'ST_CNV_ID'], axis=1)
+        new_data = new_data.drop(['Number_of_Prior_Therapies'], axis=1)
+        # VALIDATION
+        if validation_features_file is not None:
+            validation_features = validation_features.drop(['ST_CD8_IF_ID', 'ST_MAF_Normal_ID', 'ST_MAF_Tumor_ID', 'ST_RNA_ID', 'ST_CNV_ID', 'Number_of_Prior_Therapies'], axis=1)
+        # VALIDATION
 
     # if param_check(params, "damien_split"):
     #     damien_split = pd.read_csv('data/damien_split.csv')
@@ -295,23 +296,24 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         validation_features = validation_features.drop(['TrainTestStatus'], axis=1)
     # VALIDATION
 
-    if param_check(params, "PRIMARY_TUMOR_ONLY"):
-        new_data = new_data.loc[new_data["TF_Tumor_Sample_Primary_or_Metastasis"] == "PRIMARY"]
+    if not new_full_data:
+        if param_check(params, "PRIMARY_TUMOR_ONLY"):
+            new_data = new_data.loc[new_data["TF_Tumor_Sample_Primary_or_Metastasis"] == "PRIMARY"]
+            # VALIDATION
+            if validation_features_file is not None:
+                raise NotImplementedError("Not implemented in the present version ('TF_Tumor_Sample_Primary_or_Metastasis' might be fake)")
+            # VALIDATION
+
+    if not new_full_data:
+        new_data = new_data.drop([
+            #"TF_Tumor_Sample_Primary_or_Metastasis",
+            "TF_Site_of_Metastasis",
+            "TF_ImmunoPhenotype",
+            "TF_Days_from_TumorSample_Collection_and_Start_of_Trial_Therapy"], axis=1)
         # VALIDATION
         if validation_features_file is not None:
-            validation_features = validation_features.loc[validation_features["TF_Tumor_Sample_Primary_or_Metastasis"] == "PRIMARY"]
+            validation_features = validation_features.drop(["TF_Site_of_Metastasis", "TF_ImmunoPhenotype", "TF_Days_from_TumorSample_Collection_and_Start_of_Trial_Therapy"], axis=1)
         # VALIDATION
-
-
-    new_data = new_data.drop([
-        #"TF_Tumor_Sample_Primary_or_Metastasis",
-        "TF_Site_of_Metastasis",
-        "TF_ImmunoPhenotype",
-        "TF_Days_from_TumorSample_Collection_and_Start_of_Trial_Therapy"], axis=1)
-    # VALIDATION
-    if validation_features_file is not None:
-        validation_features = validation_features.drop(["TF_Site_of_Metastasis", "TF_ImmunoPhenotype", "TF_Days_from_TumorSample_Collection_and_Start_of_Trial_Therapy"], axis=1)
-    # VALIDATION
 
     mut_num = None
     if param_check(params, "with_mutations"):
@@ -352,23 +354,34 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
             validation_features = validation_features.drop("Unnamed: 0", axis=1)
     # VALIDATION
 
-    new_data.rename(columns={"Received_Prior_Therapy":"CF_Received_Prior_Therapy",
-                             "Sex":"CF_Sex",
-                             "Age":"CF_Age"
-                             }, inplace=True)
-    # VALIDATION
-    if validation_features_file is not None:
-        validation_features.rename(columns={"Received_Prior_Therapy":"CF_Received_Prior_Therapy", "Sex":"CF_Sex", "Age":"CF_Age"}, inplace=True)
-    # VALIDATION
+    if not new_full_data:
+        new_data.rename(columns={"Received_Prior_Therapy":"CF_Received_Prior_Therapy",
+                                "Sex":"CF_Sex",
+                                "Age":"CF_Age"
+                                }, inplace=True)
+        # VALIDATION
+        if validation_features_file is not None:
+            validation_features.rename(columns={"Received_Prior_Therapy":"CF_Received_Prior_Therapy", "Sex":"CF_Sex", "Age":"CF_Age"}, inplace=True)
+        # VALIDATION
+    else:
+        new_data.rename(columns={"Sex":"CF_Sex", "Age":"CF_Age"}, inplace=True)
+        # VALIDATION
+        if validation_features_file is not None:
+            validation_features.rename(columns={"Sex":"CF_Sex", "Age":"CF_Age"}, inplace=True)
+        # VALIDATION
 
     # columns_to_remove = [x for x in new_data.columns if not x.startswith("BP_") and not x.startswith("GE_") and not x.startswith("MT_")]
     # columns_to_remove.remove("TRAIN")
     # columns_to_remove.remove("Outcome")
-    columns_to_remove = ['PS_MSKCC', 'PS_IMDC', 'TF_Tumor_Sample_Primary_or_Metastasis', 'CF_Received_Prior_Therapy', 'CF_Sex']
-    columns_to_remove = columns_to_remove + ['Arm']
-    columns_to_discretize = ['TF_Purity', 'TF_Ploidy', 'TF_TMB_Counts', 'TF_TM_Area', 'TF_TM_CD8', 'TF_TM_CD8_Density',
-                             'TF_TC_Area', 'TF_TC_CD8', 'TF_TC_CD8_Density', 'TF_TM_TC_Ratio', 'TF_TM_CD8_PERCENT',
-                             'TF_TC_CD8_PERCENT', 'CF_Age']
+    if not new_full_data:
+        columns_to_remove = ['PS_MSKCC', 'PS_IMDC', 'TF_Tumor_Sample_Primary_or_Metastasis', 'CF_Received_Prior_Therapy', 'CF_Sex']
+        columns_to_remove = columns_to_remove + ['Arm']
+        columns_to_discretize = ['TF_Purity', 'TF_Ploidy', 'TF_TMB_Counts', 'TF_TM_Area', 'TF_TM_CD8', 'TF_TM_CD8_Density',
+                                'TF_TC_Area', 'TF_TC_CD8', 'TF_TC_CD8_Density', 'TF_TM_TC_Ratio', 'TF_TM_CD8_PERCENT',
+                                'TF_TC_CD8_PERCENT', 'CF_Age']
+    else:
+        columns_to_remove = ["CF_Sex"]
+        columns_to_discretize = ["CF_Age"]
 
     discretizer = KBinsDiscretizer(n_bins=10,encode='ordinal', strategy='quantile')
 
@@ -401,7 +414,10 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     train_classification_labels = new_data_train['Outcome']
     new_data_train = new_data_train.drop(["TRAIN", "Outcome"], axis=1)
     # Dropping target related features
-    new_data_train = new_data_train.drop(['Benefit', 'ORR', 'PFS_CNSR', 'OS', 'OS_CNSR','PFS'], axis=1)
+    if not new_full_data:
+        new_data_train = new_data_train.drop(['Benefit', 'ORR', 'PFS_CNSR', 'OS', 'OS_CNSR','PFS'], axis=1)
+    else:
+        new_data_train = new_data_train.drop(['PFS_CNSR', 'PFS'], axis=1)
 
     new_data_test = new_data.loc[new_data["TRAIN"] == "TEST"]
     test_classification_labels = new_data_test['Outcome']
@@ -411,12 +427,18 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
     test_pfs_cnsr = new_data_test['PFS_CNSR']
     # GET input_features['PFS_CNSR']
     # Dropping target related features
-    new_data_test = new_data_test.drop(['Benefit', 'ORR', 'PFS_CNSR', 'OS', 'OS_CNSR','PFS'], axis=1)
+    if not new_full_data:
+        new_data_test = new_data_test.drop(['Benefit', 'ORR', 'PFS_CNSR', 'OS', 'OS_CNSR','PFS'], axis=1)
+    else:
+        new_data_test = new_data_test.drop(['PFS_CNSR', 'PFS'], axis=1)
     # VALIDATION
     if validation_features_file is not None:
         validation_classification_labels = validation_features['Outcome']
         validation_pfs = validation_features['PFS']
-        validation_features = validation_features.drop(["TRAIN", "Outcome", 'Benefit', 'ORR', 'PFS_CNSR', 'OS', 'OS_CNSR','PFS'], axis=1)
+        if not new_full_data:
+            validation_features = validation_features.drop(["TRAIN", "Outcome", 'Benefit', 'ORR', 'PFS_CNSR', 'OS', 'OS_CNSR','PFS'], axis=1)
+        else:
+            validation_features = validation_features.drop(["TRAIN", "Outcome", 'PFS_CNSR', 'PFS'], axis=1)
     # VALIDATION
 
     #dim = 100
@@ -449,9 +471,9 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         #print("Normalizer done")
 
     CF_columns = [x for x in new_data.columns if x.startswith("CF_")]
+    scaler = MinMaxScaler()
     if CF_columns:
         # MIN MAX Scaler
-        scaler = MinMaxScaler()
         new_data_train[CF_columns] = scaler.fit_transform(new_data_train[CF_columns])
         new_data_test[CF_columns] = scaler.transform(new_data_test[CF_columns])
         #print("MinMax Scaler done")
@@ -484,16 +506,28 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         if TF_columns:
             new_data_train[TF_columns] = weights["TF"]*scaler.fit_transform(new_data_train[TF_columns])
             new_data_test[TF_columns] = weights["TF"]*scaler.transform(new_data_test[TF_columns])
+            if validation_features_file is not None:
+                raise NotImplementedError("'TF' columns in validation not expected")
         if GE_columns:
             new_data_train[GE_columns] = weights["GE"]*scaler.fit_transform(new_data_train[GE_columns])
             new_data_test[GE_columns] = weights["GE"]*scaler.transform(new_data_test[GE_columns])
+            # VALIDATION
+            if validation_features_file is not None:
+                validation_features[GE_columns] = weights["GE"]*scaler.transform(validation_features[GE_columns])
+            # VALIDATION
         if BP_columns:
             new_data_train[BP_columns] = weights["BP"]*scaler.fit_transform(new_data_train[BP_columns])
             new_data_test[BP_columns] = weights["BP"]*scaler.transform(new_data_test[BP_columns])
+            # VALIDATION
+            if validation_features_file is not None:
+                validation_features[BP_columns] = weights["BP"]*scaler.transform(validation_features[BP_columns])
+            # VALIDATION
         # ARM WEIGHTS
         if Arm_columns:
             new_data_train[Arm_columns] = weights["Arm"]*scaler.fit_transform(new_data_train[Arm_columns])
             new_data_test[Arm_columns] = weights["Arm"]*scaler.transform(new_data_test[Arm_columns])
+            if validation_features_file is not None:
+                raise NotImplementedError("'Arm' columns in validation not expected")
         # ARM WEIGHTS
         if MT_columns:
             new_data_train[MT_columns] = weights["MT"]*scaler.fit_transform(new_data_train[MT_columns])  # \/
@@ -505,6 +539,8 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         if PS_columns:
             new_data_train[PS_columns] = weights["PS"]*scaler.fit_transform(new_data_train[PS_columns])
             new_data_test[PS_columns] = weights["PS"]*scaler.transform(new_data_test[PS_columns])
+            if validation_features_file is not None:
+                raise NotImplementedError("'PS' columns in validation not expected")
         if CF_columns:
             new_data_train[CF_columns] = weights["CF"]*scaler.fit_transform(new_data_train[CF_columns])
             new_data_test[CF_columns] = weights["CF"]*scaler.transform(new_data_test[CF_columns])

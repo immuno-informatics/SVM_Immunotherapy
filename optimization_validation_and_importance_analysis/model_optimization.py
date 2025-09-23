@@ -54,8 +54,7 @@ new_full_data = True
 cut_input_params = False
 
 # Optuna configuration
-# opt_n_trials = 25_000
-opt_n_trials = 10
+opt_n_trials = 25_000
 opt_n_jobs = 1  # Results are unreproducible if > 1
 # Also, if > 1, there are some strange things going
 # on with the results vs. the evaluation at the end
@@ -64,7 +63,7 @@ opt_db_name = "svm-new-db.sqlite3"
 #    Persistent storage (analyze with `optuna-dashboard`):
 opt_storage = f"sqlite:///{results_dir.joinpath(opt_db_name)}"
 #    Uncomment to disable persistent storage:
-opt_storage = None
+# opt_storage = None
 
 cv_n_jobs = 1
 cv_scoring = "balanced_accuracy"
@@ -77,10 +76,7 @@ hotspots_key = "hotspots"
 if cut_input_params:
     weights_to_opti = frozenset({"CF", "MT"})
 elif new_full_data:
-    weights_to_opti = frozenset({"PS", "TF", "CF", "BP", "MT", "GE", "Arm"})
-    raise NotImplementedError(
-        f"Double-check if weights to optimize are right (`new_full_data={new_full_data}`)"
-    )
+    weights_to_opti = frozenset({"CF", "BP", "MT", "GE"})
 else:
     weights_to_opti = frozenset({"PS", "TF", "CF", "BP", "MT", "GE", "Arm"})
 
@@ -147,6 +143,7 @@ def objective(trial, config):
             config,
             dimension_of_embedding_vectors=v_len,
             cut_input_params=cut_input_params,
+            new_full_data=new_full_data,
         )
     )
     train_data, train_y = oversample_x_y(train_data, train_y)
@@ -220,6 +217,7 @@ if __name__ == "__main__":
             config,
             dimension_of_embedding_vectors=best_v_len,
             cut_input_params=cut_input_params,
+            new_full_data=new_full_data,
         )
     )
     _, y_pred, y_proba = svm_train_test(

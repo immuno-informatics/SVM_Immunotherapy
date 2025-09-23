@@ -27,10 +27,10 @@ Run the `prepare_new_braun_data.py` script with specific configuration set up to
 The script `model_optimization.py` optimizes a selected model:
 
 ```bash
-python model_optimization.py <X>
+PYTHONWARNINGS="ignore" python model_optimization.py <X>
 ```
 
-where `<X>` is an index of one of the models saved in the `_config.py` file (baseline, peptide, contig, or scaffold).
+where `<X>` is an index of one of the models saved in the `_config.py` file (baseline, peptide, contig, or scaffold). `PYTHONWARNINGS="ignore"` is added to disable potential annoying warnings.
 
 After it's finished, copy optimized parameters back to the `_config.py` file.
 
