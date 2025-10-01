@@ -247,6 +247,8 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         validation_features['Age'] = validation_features['Age'].round()
         validation_features['Sex'] = validation_features['Sex'].str.lower()
 
+        vf_len = validation_features.shape[0]
+
         if not new_full_data:
             cut_cols = ['SUBJID', 'PFS', 'Sex', 'Age']
 
@@ -258,7 +260,6 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
 
             #! Adding dummy columns (?)
             validation_dummy_cols = list(set(new_data.columns) - set(validation_features.columns))
-            vf_len = validation_features.shape[0]
             for d_c in validation_dummy_cols:
                 u_org_vals = new_data[d_c].unique()
                 validation_features[d_c] = random.choices(u_org_vals, k=vf_len)
@@ -483,11 +484,11 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         # VALIDATION
 
     # DOUBLE-CHECKING IF EVERYTHING'S FINE
-    # if not all(new_data_train.columns == new_data_test.columns):
-    #     raise ValueError("Columns in `train` and `test` are not the same")
-    # if validation_features_file is not None:
-    #     if not all(new_data_train.columns == validation_features.columns):
-    #         raise ValueError("Columns in `train` and `validation` are not the same")
+    if not all(new_data_train.columns == new_data_test.columns):
+        raise ValueError("Columns in `train` and `test` are not the same")
+    if validation_features_file is not None:
+        if not all(new_data_train.columns == validation_features.columns):
+            raise ValueError("Columns in `train` and `validation` are not the same")
     # DOUBLE-CHECKING IF EVERYTHING'S FINE
 
     # Relative weights among groups of features

@@ -63,12 +63,12 @@ opt_n_trials = 25_000
 opt_n_jobs = 1  # Results are unreproducible if > 1
 # Also, if > 1, there are some strange things going
 # on with the results vs. the evaluation at the end
+# Number of iterations without a better result
+# after which optimization is terminated:
 opt_max_stagnation_trials = 30_000
-opt_db_name = "svm-opti-db-new.sqlite3"
-#    Persistent storage (analyze with `optuna-dashboard`):
-opt_storage = f"sqlite:///{results_dir.joinpath(opt_db_name)}"
-#    Uncomment to disable persistent storage:
-# opt_storage = None
+# Set `True` to save progress to a persistent
+# storage (analyze with `optuna-dashboard`):
+opt_save_database = True
 
 cv_n_jobs = 1
 cv_scoring = "balanced_accuracy"
@@ -196,6 +196,12 @@ if __name__ == "__main__":
 
     if not hotspots_opti:
         model_label += f"_hotspots_{hotspots_override}"
+
+    if opt_save_database:
+        opt_db_name = f"svm-opti-db-new-{model_label.replace(' ', '_')}.sqlite3"
+        opt_storage = f"sqlite:///{results_dir.joinpath(opt_db_name)}"
+    else:
+        opt_storage = None
 
     study = optuna.create_study(
         study_name=f"{model_label}",
