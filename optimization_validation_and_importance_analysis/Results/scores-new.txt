@@ -1,3 +1,11 @@
+Baseline_hotspots_False:
+  Accuracy: 0.737
+  Precision: 0.571
+  Recall: 0.842
+  F1 Score: 0.681
+  ROC AUC: 0.704
+    _MEAN_: 0.707
+    BA: 0.763
 Baseline_hotspots_True:
   Accuracy: 0.789
   Precision: 0.684
@@ -5,14 +13,6 @@ Baseline_hotspots_True:
   F1 Score: 0.684
   ROC AUC: 0.781
     _MEAN_: 0.725
-    BA: 0.763
-Peptide level:
-  Accuracy: 0.772
-  Precision: 0.636
-  Recall: 0.737
-  F1 Score: 0.683
-  ROC AUC: 0.500
-    _MEAN_: 0.666
     BA: 0.763
 Contig level:
   Accuracy: 0.825
@@ -30,11 +30,3 @@ Scaffold level:
   ROC AUC: 0.784
     _MEAN_: 0.779
     BA: 0.816
-Baseline_hotspots_False:
-  Accuracy: 0.737
-  Precision: 0.571
-  Recall: 0.842
-  F1 Score: 0.681
-  ROC AUC: 0.704
-    _MEAN_: 0.707
-    BA: 0.763

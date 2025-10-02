@@ -39,6 +39,26 @@ configurations = [
     #     # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
     # },
     {
+        "plot_label": "Baseline_hotspots_False",
+        "PRIMARY_TUMOR_ONLY": False,
+        "with_mutations": True,
+        "random_contigs": False,
+        "contig_file": "../data/braun_mutations_alternative_scoring_narrow_broad.tsv",
+        "HS_features": [],
+        #  Optimized parameters:
+        #    NEW data schema:
+        "mut_vec_len": 640,
+        "clf_params": {
+            "kernel": "poly",
+            "C": 0.007557195141845231,
+            "gamma": 0.03219807318116276,
+            "coef0": 8.68,
+            "degree": 6,
+        },
+        "hotspots": False,
+        "weights": {"GE": 0.1, "CF": 0.7, "MT": 0.4, "BP": 0.7},
+    },
+    {
         "plot_label": "Baseline_hotspots_True",
         "PRIMARY_TUMOR_ONLY": False,
         "with_mutations": True,
@@ -190,25 +210,5 @@ configurations = [
         },
         "hotspots": True,
         "weights": {"MT": 0.6, "BP": 0.1, "CF": 0.2, "GE": 0.0},
-    },
-    {
-        "plot_label": "Baseline_hotspots_False",
-        "PRIMARY_TUMOR_ONLY": False,
-        "with_mutations": True,
-        "random_contigs": False,
-        "contig_file": "../data/braun_mutations_alternative_scoring_narrow_broad.tsv",
-        "HS_features": [],
-        #  Optimized parameters:
-        #    NEW data schema:
-        "mut_vec_len": 640,
-        "clf_params": {
-            "kernel": "poly",
-            "C": 0.007557195141845231,
-            "gamma": 0.03219807318116276,
-            "coef0": 8.68,
-            "degree": 6,
-        },
-        "hotspots": False,
-        "weights": {"GE": 0.1, "CF": 0.7, "MT": 0.4, "BP": 0.7},
     },
 ]
