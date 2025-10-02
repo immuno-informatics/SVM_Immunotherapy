@@ -1,0 +1,32 @@
+Baseline_hotspots_False:
+  Accuracy: 0.737
+  Precision: 0.571
+  Recall: 0.842
+  F1 Score: 0.681
+  ROC AUC: 0.704
+    _MEAN_: 0.707
+    BA: 0.763
+Baseline_hotspots_True:
+  Accuracy: 0.789
+  Precision: 0.684
+  Recall: 0.684
+  F1 Score: 0.684
+  ROC AUC: 0.781
+    _MEAN_: 0.725
+    BA: 0.763
+Contig level:
+  Accuracy: 0.825
+  Precision: 0.714
+  Recall: 0.789
+  F1 Score: 0.750
+  ROC AUC: 0.823
+    _MEAN_: 0.780
+    BA: 0.816
+Scaffold level:
+  Accuracy: 0.842
+  Precision: 0.778
+  Recall: 0.737
+  F1 Score: 0.757
+  ROC AUC: 0.784
+    _MEAN_: 0.779
+    BA: 0.816

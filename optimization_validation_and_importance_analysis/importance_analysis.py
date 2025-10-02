@@ -31,8 +31,11 @@ random.seed(1024)
 np.random.seed(1024)
 yeloh_seed = 2137
 
+# Set `True` if you want to use the updated input data schema
+new_full_data = True
+
 # Set `True` if you want to use only age, gender, and mutation data:
-cut_input_params = True
+cut_input_params = False
 
 mut_vec_len_label = "mut_vec_len"
 clf_params_label = "clf_params"
@@ -66,6 +69,15 @@ add_info_cols = [
 
 results_dir = Path("Results")
 results_dir.mkdir(parents=True, exist_ok=True)
+
+if cut_input_params and not new_full_data:
+    name_suffix = "-cut"
+elif new_full_data and not cut_input_params:
+    name_suffix = "-new"
+elif new_full_data and cut_input_params:
+    name_suffix = "-new-cut"
+else:
+    name_suffix = "-full"
 
 
 def svm_train_test(train_data, train_y, test_data, clf_kwargs={}):
@@ -123,6 +135,7 @@ def svm_experiment(config, cut_input_params, deletion_type):
         dimension_of_embedding_vectors=dimension_of_embedding_vectors,
         cut_input_params=cut_input_params,
         deletion_type=deletion_type,
+        new_full_data=new_full_data,
     )
 
     if train_data is None:
@@ -270,6 +283,7 @@ if __name__ == "__main__":
     #
 
     overall_results.to_csv(
-        results_dir / f"mutation-remove-experiments-{model_name.replace(' ', '_')}.csv",
+        results_dir
+        / f"mutation-remove-experiments-{model_name.replace(' ', '_')}{name_suffix}.csv",
         index=False,
     )
