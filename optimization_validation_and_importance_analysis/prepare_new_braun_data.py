@@ -26,9 +26,12 @@ reduced_braun_data_file = (
 
 new_full_data_cols_file = "../data/Common_columns_Braun_to_KATY.csv"
 
-# Set to path if you want to switch `test` with `validation` data to process
-validation_data_file = "/data/teamgdansk/asd.csv"
-# validation_data_file = None
+# Set to path if you want to switch `test` with `validation` data to process,
+# otherwise set to `None`
+# validation_data_file = "/data/teamgdansk/KATY_Edin_cohort_validation_gsva_final.csv"
+# validation_data_file = "/data/teamgdansk/KATY_Edin_cohort_validation_ssgsea_final.csv"
+validation_data_file = None
+
 reduced_validation_data_file = (
     f"../data/Braun_2020_ALL_UNIQUE_final_reduced_{version_suffix}_validation.csv"
 )
@@ -48,6 +51,8 @@ og_braun_data = pd.read_csv(
 
 if validation_data_file is not None:
     validation_data = pd.read_csv(validation_data_file)
+    # Eeeeh
+    validation_data["TrainTestStatus"] = ["VAL"] * validation_data.shape[0]
     #! Dropping NaNs (?)
     validation_data = validation_data.dropna()
 

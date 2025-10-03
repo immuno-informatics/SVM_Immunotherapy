@@ -45,6 +45,10 @@ configurations = [
         "random_contigs": False,
         "contig_file": "../data/braun_mutations_alternative_scoring_narrow_broad.tsv",
         "HS_features": [],
+        #
+        "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
+        # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad_filtered.tsv",
+        #
         #  Optimized parameters:
         #    NEW data schema:
         "mut_vec_len": 640,
@@ -65,6 +69,10 @@ configurations = [
         "random_contigs": False,
         "contig_file": "../data/braun_mutations_alternative_scoring_narrow_broad.tsv",
         "HS_features": [],
+        #
+        "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
+        # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad_filtered.tsv",
+        #
         #  Optimized parameters:
         #    NEW data schema:
         "mut_vec_len": 636,
@@ -111,7 +119,8 @@ configurations = [
         # },
         # "hotspots": True,
         # "weights": {"MT": 0.8, "CF": 0.6},
-        # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
+        "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
+        # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad_filtered.tsv",
         #    NEW data schema:
         "mut_vec_len": 3455,
         "clf_params": {
@@ -155,7 +164,8 @@ configurations = [
         # "clf_params": {"kernel": "linear", "C": 0.9738784539012868},
         # "hotspots": False,
         # "weights": {"MT": 0.7, "CF": 0.2},
-        # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_contigs.tsv",
+        "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_contigs.tsv",
+        # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_contigs_filtered.tsv",
         #    NEW data schema:
         "mut_vec_len": 450,
         "clf_params": {
@@ -200,7 +210,8 @@ configurations = [
         # },
         # "hotspots": True,
         # "weights": {"MT": 0.9, "CF": 0.6},
-        # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_scaffolds10.tsv",
+        "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_scaffolds10.tsv",
+        # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_scaffolds10_filtered.tsv",
         #    NEW data schema:
         "mut_vec_len": 1369,
         "clf_params": {
