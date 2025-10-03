@@ -47,20 +47,28 @@ results_dir.mkdir(parents=True, exist_ok=True)
 
 # Config
 
+# Set `True` if you want to use the updated input data schema
+new_full_data = True
+
 # Set `True` if you want to use only age, gender, and mutation data:
 cut_input_params = False
+
+# If `True`, optimize if filtering hotspots or not
+hotspots_opti = True
+# If `False`, set an override value
+hotspots_override = False
 
 # Optuna configuration
 opt_n_trials = 25_000
 opt_n_jobs = 1  # Results are unreproducible if > 1
 # Also, if > 1, there are some strange things going
 # on with the results vs. the evaluation at the end
+# Number of iterations without a better result
+# after which optimization is terminated:
 opt_max_stagnation_trials = 30_000
-opt_db_name = "svm-full-db.sqlite3"
-#    Persistent storage (analyze with `optuna-dashboard`):
-opt_storage = f"sqlite:///{results_dir.joinpath(opt_db_name)}"
-#    Uncomment to disable persistent storage:
-# opt_storage = None
+# Set `True` to save progress to a persistent
+# storage (analyze with `optuna-dashboard`):
+opt_save_database = True
 
 cv_n_jobs = 1
 cv_scoring = "balanced_accuracy"
@@ -72,6 +80,8 @@ weights_key = "weights"
 hotspots_key = "hotspots"
 if cut_input_params:
     weights_to_opti = frozenset({"CF", "MT"})
+elif new_full_data:
+    weights_to_opti = frozenset({"CF", "BP", "MT", "GE"})
 else:
     weights_to_opti = frozenset({"PS", "TF", "CF", "BP", "MT", "GE", "Arm"})
 
@@ -130,14 +140,18 @@ def objective(trial, config):
     config[weights_key] = weights
 
     # Filtering hotspots or not optimization
-    hotspots = trial.suggest_categorical(hotspots_key, [False, True])
-    config[hotspots_key] = hotspots
+    if hotspots_opti:
+        hotspots = trial.suggest_categorical(hotspots_key, [False, True])
+        config[hotspots_key] = hotspots
+    else:
+        config[hotspots_key] = hotspots_override
 
     train_data, train_y, test_data, test_y, _, _, _, _, _, _, _ = (
         ds.transforming_Braun_dataset(
             config,
             dimension_of_embedding_vectors=v_len,
             cut_input_params=cut_input_params,
+            new_full_data=new_full_data,
         )
     )
     train_data, train_y = oversample_x_y(train_data, train_y)
@@ -145,8 +159,8 @@ def objective(trial, config):
     x_full = np.concatenate((train_data, test_data))
     y_full = np.concatenate((train_y, test_y))
     train_indices = [-1] * len(train_data)
-    validation_indices = [0] * len(test_data)
-    split = np.array(train_indices + validation_indices)
+    test_indices = [0] * len(test_data)
+    split = np.array(train_indices + test_indices)
     ps = PredefinedSplit(split)
 
     scores = cross_val_score(
@@ -161,7 +175,10 @@ if __name__ == "__main__":
         sys.exit("You must specify index of a model")
     m_idx = int(sys.argv[1])
 
-    config = cfg.configurations[m_idx]
+    try:
+        config = cfg.configurations[m_idx]
+    except IndexError:
+        raise IndexError(f"No model with index of `{m_idx}` in `_config.py`")
 
     model_label = config[label_key]
 
@@ -176,6 +193,15 @@ if __name__ == "__main__":
             error_evaluator=error_evaluator,
         )
     )
+
+    if not hotspots_opti:
+        model_label += f"_hotspots_{hotspots_override}"
+
+    if opt_save_database:
+        opt_db_name = f"svm-opti-db-new-{model_label.replace(' ', '_')}.sqlite3"
+        opt_storage = f"sqlite:///{results_dir.joinpath(opt_db_name)}"
+    else:
+        opt_storage = None
 
     study = optuna.create_study(
         study_name=f"{model_label}",
@@ -198,7 +224,10 @@ if __name__ == "__main__":
     best_svm_params = study.best_params
     best_v_len = best_svm_params.pop(v_len_name)
     best_weights = {w: best_svm_params.pop(w) for w in weights_to_opti}
-    best_hotspots = best_svm_params.pop(hotspots_key)
+    if hotspots_opti:
+        best_hotspots = best_svm_params.pop(hotspots_key)
+    else:
+        best_hotspots = hotspots_override
 
     config[weights_key] = best_weights
     config[hotspots_key] = best_hotspots
@@ -208,6 +237,7 @@ if __name__ == "__main__":
             config,
             dimension_of_embedding_vectors=best_v_len,
             cut_input_params=cut_input_params,
+            new_full_data=new_full_data,
         )
     )
     _, y_pred, y_proba = svm_train_test(
@@ -223,11 +253,13 @@ if __name__ == "__main__":
 
     print(
         f"\n{model_label}:\n"
-        f"  Best score: {best_score:.3f}\n"
-        f"  Best vector length: {best_v_len}\n"
-        f"  Best SVM parameters: {best_svm_params}\n"
-        f'  Best "hotspots": {best_hotspots}\n'
-        f"  Best weights: {best_weights}\n"
+        f"  Best score: {best_score:.3f}\n\n"
+        "  Optimized params:\n"
+        f'"mut_vec_len": {best_v_len},\n'
+        f'"clf_params": {best_svm_params},\n'
+        f'"hotspots": {best_hotspots},\n'
+        f'"weights": {best_weights},\n\n'
+        "  Scores:\n"
         f"    Accuracy: {acc:.3f}\n"
         f"    Precision: {prec:.3f}\n"
         f"    Recall: {rec:.3f}\n"
