@@ -32,10 +32,10 @@ np.random.seed(1024)
 yeloh_seed = 2137
 
 # Set `True` if you want to use the updated input data schema
-new_full_data = True
+new_full_data = False
 
 # Set `True` if you want to use only age, gender, and mutation data:
-cut_input_params = False
+cut_input_params = True
 
 mut_vec_len_label = "mut_vec_len"
 clf_params_label = "clf_params"

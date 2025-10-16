@@ -8,6 +8,9 @@ configurations = [
         "random_contigs": False,
         "contig_file": "../data/braun_mutations_alternative_scoring_narrow_broad.tsv",
         "HS_features": [],
+        #
+        "validation_contig_file": "validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
+        #
         #  Optimized parameters:
         #    All input data:
         # "mut_vec_len": 887,
@@ -36,7 +39,6 @@ configurations = [
         },
         "hotspots": True,
         "weights": {"MT": 0.6, "CF": 0.2},
-        "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
     },
     # {
     #     "plot_label": "Baseline_hotspots_False",
@@ -46,8 +48,8 @@ configurations = [
     #     "contig_file": "../data/braun_mutations_alternative_scoring_narrow_broad.tsv",
     #     "HS_features": [],
     #     #
-    #     "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
-    #     # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad_filtered.tsv",
+    #     "validation_contig_file": "validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
+    #     # "validation_contig_file": "validation-datasets/patient_mutations_alternative_scoring_narrow_broad_filtered.tsv",
     #     #
     #     #  Optimized parameters:
     #     #    NEW data schema:
@@ -70,8 +72,8 @@ configurations = [
     #     "contig_file": "../data/braun_mutations_alternative_scoring_narrow_broad.tsv",
     #     "HS_features": [],
     #     #
-    #     "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
-    #     # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad_filtered.tsv",
+    #     "validation_contig_file": "validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
+    #     # "validation_contig_file": "validation-datasets/patient_mutations_alternative_scoring_narrow_broad_filtered.tsv",
     #     #
     #     #  Optimized parameters:
     #     #    NEW data schema:
@@ -92,6 +94,10 @@ configurations = [
         "random_contigs": False,
         "contig_file": "../data/braun_mutations_alternative_scoring_narrow_broad.tsv",
         "HS_features": ["Unique_peptides_narrow", "Promiscuity_narrow"],
+        #
+        "validation_contig_file": "validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
+        # "validation_contig_file": validation-datasets/patient_mutations_alternative_scoring_narrow_broad_filtered.tsv",
+        #
         #  Optimized parameters:
         #    All input data:
         # "mut_vec_len": 497,
@@ -111,26 +117,24 @@ configurations = [
         #     "GE": 0.6,
         # },
         #    Only age, gender, and mutation data input:
-        # "mut_vec_len": 481,
-        # "clf_params": {
-        #     "kernel": "rbf",
-        #     "C": 0.008218035880072005,
-        #     "gamma": 0.6866646010940057,
-        # },
-        # "hotspots": True,
-        # "weights": {"MT": 0.8, "CF": 0.6},
-        "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad.tsv",
-        # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_alternative_scoring_narrow_broad_filtered.tsv",
-        #    NEW data schema:
-        "mut_vec_len": 3455,
+        "mut_vec_len": 481,
         "clf_params": {
-            "kernel": "sigmoid",
-            "C": 0.012143596510890463,
-            "gamma": 0.00803714910274797,
-            "coef0": 5.04,
+            "kernel": "rbf",
+            "C": 0.008218035880072005,
+            "gamma": 0.6866646010940057,
         },
         "hotspots": True,
-        "weights": {"GE": 0.0, "MT": 0.3, "CF": 0.0, "BP": 1.0},
+        "weights": {"MT": 0.8, "CF": 0.6},
+        #    NEW data schema:
+        # "mut_vec_len": 3455,
+        # "clf_params": {
+        #     "kernel": "sigmoid",
+        #     "C": 0.012143596510890463,
+        #     "gamma": 0.00803714910274797,
+        #     "coef0": 5.04,
+        # },
+        # "hotspots": True,
+        # "weights": {"GE": 0.0, "MT": 0.3, "CF": 0.0, "BP": 1.0},
     },
     {
         "plot_label": "Contig level",
@@ -139,6 +143,10 @@ configurations = [
         "random_contigs": False,
         "contig_file": "../data/Michal_combined_set_14_02_2025.tsv",
         "HS_features": ["unique_peptides", "popcov_but_sqrt"],
+        #
+        "validation_contig_file": "validation-datasets/patient_mutations_contigs.tsv",
+        # "validation_contig_file": "validation-datasets/patient_mutations_contigs_filtered.tsv",
+        #
         #  Optimized parameters:
         #    All input data:
         # "mut_vec_len": 450,
@@ -160,21 +168,19 @@ configurations = [
         #     "MT": 1.0,
         # },
         #    Only age, gender, and mutation data input:
-        # "mut_vec_len": 584,
-        # "clf_params": {"kernel": "linear", "C": 0.9738784539012868},
-        # "hotspots": False,
-        # "weights": {"MT": 0.7, "CF": 0.2},
-        "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_contigs.tsv",
-        # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_contigs_filtered.tsv",
-        #    NEW data schema:
-        "mut_vec_len": 450,
-        "clf_params": {
-            "kernel": "rbf",
-            "C": 0.012002523737685003,
-            "gamma": 0.5653724193333343,
-        },
+        "mut_vec_len": 584,
+        "clf_params": {"kernel": "linear", "C": 0.9738784539012868},
         "hotspots": False,
-        "weights": {"BP": 0.5, "GE": 0.1, "MT": 0.7, "CF": 0.5},
+        "weights": {"MT": 0.7, "CF": 0.2},
+        #    NEW data schema:
+        # "mut_vec_len": 450,
+        # "clf_params": {
+        #     "kernel": "rbf",
+        #     "C": 0.012002523737685003,
+        #     "gamma": 0.5653724193333343,
+        # },
+        # "hotspots": False,
+        # "weights": {"BP": 0.5, "GE": 0.1, "MT": 0.7, "CF": 0.5},
     },
     {
         "plot_label": "Scaffold level",
@@ -183,6 +189,10 @@ configurations = [
         "random_contigs": False,
         "contig_file": "../data/Braun_hg38_epscaff10_w_score_2025.tsv",
         "HS_features": ["unique_peptides", "popcov_but_sqrt"],
+        #
+        "validation_contig_file": "validation-datasets/patient_mutations_scaffolds10.tsv",
+        # "validation_contig_file": "validation-datasets/patient_mutations_scaffolds10_filtered.tsv",
+        #
         #  Optimized parameters:
         #    All input data:
         # "mut_vec_len": 1337,
@@ -202,24 +212,22 @@ configurations = [
         #     "MT": 0.9,
         # },
         #    Only age, gender, and mutation data input:
-        # "mut_vec_len": 1710,
-        # "clf_params": {
-        #     "kernel": "rbf",
-        #     "C": 2.957484657922523,
-        #     "gamma": 0.40331433305943104,
-        # },
-        # "hotspots": True,
-        # "weights": {"MT": 0.9, "CF": 0.6},
-        "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_scaffolds10.tsv",
-        # "validation_contig_file": "/data/teamgdansk/katy-variants/validation-datasets/patient_mutations_scaffolds10_filtered.tsv",
-        #    NEW data schema:
-        "mut_vec_len": 1369,
+        "mut_vec_len": 1710,
         "clf_params": {
             "kernel": "rbf",
-            "C": 2.8556693848200836,
-            "gamma": 1.843549982163684,
+            "C": 2.957484657922523,
+            "gamma": 0.40331433305943104,
         },
         "hotspots": True,
-        "weights": {"MT": 0.6, "BP": 0.1, "CF": 0.2, "GE": 0.0},
+        "weights": {"MT": 0.9, "CF": 0.6},
+        #    NEW data schema:
+        # "mut_vec_len": 1369,
+        # "clf_params": {
+        #     "kernel": "rbf",
+        #     "C": 2.8556693848200836,
+        #     "gamma": 1.843549982163684,
+        # },
+        # "hotspots": True,
+        # "weights": {"MT": 0.6, "BP": 0.1, "CF": 0.2, "GE": 0.0},
     },
 ]

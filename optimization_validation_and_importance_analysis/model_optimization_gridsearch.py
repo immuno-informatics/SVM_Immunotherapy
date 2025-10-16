@@ -32,7 +32,7 @@ np.random.seed(1024)
 # Config
 
 # Set `True` if you want to use only age, gender, and mutation data:
-cut_input_params = False
+cut_input_params = True
 
 mutations_vector_len_range = np.linspace(1, 4000, num=4000, dtype=int)
 # mutations_vector_len_range = [887, 243, 375, 881]

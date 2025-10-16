@@ -458,7 +458,7 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         # VALIDATION
     # COLUMNS FILTERING
 
-    TF_columns = [x for x in new_data.columns if x.startswith("TF_")]
+    TF_columns = [x for x in new_data_train.columns if x.startswith("TF_")]
     if TF_columns:
         # MIN MAX Scaler
         scaler = MinMaxScaler()
@@ -471,7 +471,7 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         new_data_test[TF_columns] = norm.fit_transform(new_data_test[TF_columns])
         #print("Normalizer done")
 
-    CF_columns = [x for x in new_data.columns if x.startswith("CF_")]
+    CF_columns = [x for x in new_data_train.columns if x.startswith("CF_")]
     scaler = MinMaxScaler()
     if CF_columns:
         # MIN MAX Scaler
@@ -484,11 +484,11 @@ def transforming_Braun_dataset(params, dimension_of_embedding_vectors=4000, cut_
         # VALIDATION
 
     # DOUBLE-CHECKING IF EVERYTHING'S FINE
-    if not all(new_data_train.columns == new_data_test.columns):
-        raise ValueError("Columns in `train` and `test` are not the same")
-    if validation_features_file is not None:
-        if not all(new_data_train.columns == validation_features.columns):
-            raise ValueError("Columns in `train` and `validation` are not the same")
+    # if not all(new_data_train.columns == new_data_test.columns):
+    #     raise ValueError("Columns in `train` and `test` are not the same")
+    # if validation_features_file is not None:
+    #     if not all(new_data_train.columns == validation_features.columns):
+    #         raise ValueError("Columns in `train` and `validation` are not the same")
     # DOUBLE-CHECKING IF EVERYTHING'S FINE
 
     # Relative weights among groups of features

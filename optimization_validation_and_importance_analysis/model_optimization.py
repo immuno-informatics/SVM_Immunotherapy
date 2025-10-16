@@ -48,10 +48,10 @@ results_dir.mkdir(parents=True, exist_ok=True)
 # Config
 
 # Set `True` if you want to use the updated input data schema
-new_full_data = True
+new_full_data = False
 
 # Set `True` if you want to use only age, gender, and mutation data:
-cut_input_params = False
+cut_input_params = True
 
 # If `True`, optimize if filtering hotspots or not
 hotspots_opti = True
