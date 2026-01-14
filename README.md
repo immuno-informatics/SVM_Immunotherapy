@@ -1,6 +1,6 @@
 # SVM_Immunotherapy
 
-[![CARMEN immunopeptidomics publication analysis results](https://zenodo.org/badge/DOI/10.5281/zenodo.14859003.svg)](https://doi.org/10.5281/zenodo.14859003)
+[![CARMEN SVM response prediction classifier](https://zenodo.org/badge/DOI/10.5281/zenodo.18248779.svg)](https://doi.org/10.5281/zenodo.18248779) [![CARMEN immunopeptidomics publication analysis results](https://zenodo.org/badge/DOI/10.5281/zenodo.14859003.svg)](https://doi.org/10.5281/zenodo.14859003)
 
 Codes and data to train the SVM immunotherapy response model.
 
